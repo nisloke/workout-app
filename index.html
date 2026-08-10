@@ -870,7 +870,14 @@
   // firebase-setup.md 절차로 프로젝트를 만든 뒤, 아래 null을 콘솔에서 복사한 firebaseConfig 객체로
   // 교체하면 Google 로그인 + Firestore 동기화가 활성화된다. null이면 이 기기(localStorage)에만 저장하며
   // 외부 네트워크 요청도 전혀 하지 않는다.
-  var FIREBASE_CONFIG = null;
+  var FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCVnWICcq1Ow8xN_orcSXapToKelrj0w0c",
+    authDomain: "workout-app-4efaa.firebaseapp.com",
+    projectId: "workout-app-4efaa",
+    storageBucket: "workout-app-4efaa.firebasestorage.app",
+    messagingSenderId: "854321208349",
+    appId: "1:854321208349:web:b4ea4daf9ed38d79ba3af4"
+  };
 
   var cloud = { user: null, auth: null, db: null, mods: null, timer: null };
   function cloudStatus(msg) {
