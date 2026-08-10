@@ -172,7 +172,8 @@
       <button type="button" id="btnImport">불러오기</button>
     </div>
     <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
-    <div class="warn">기록은 현재 이 기기 브라우저(localStorage)에만 저장된다 — 임시 방식이며, 실사용 배포(GitHub Pages) 시 Firebase 기록으로 전환 예정. 파일을 직접 열어 쓰는 경우(file://) 브라우저 데이터 정리 시 유실될 수 있으니 <b>주 1회 내보내기</b>를 권장. 불러오기는 현재 기록 전체를 파일 내용으로 교체한다.</div>
+    <div class="warn" id="localWarn">미로그인 상태에서는 기록이 이 기기 브라우저에만 저장되어 브라우저 데이터 정리 시 유실될 수 있다 — <b>Google 로그인(자동 동기화)</b> 또는 주 1회 내보내기를 권장.</div>
+    <div class="note">불러오기는 현재 기록 전체를 파일 내용으로 교체한다.</div>
   </div>
 
   <footer>
@@ -939,14 +940,17 @@
       cloud.mods = { auth: authM, fs: fsM };
       authM.onAuthStateChanged(cloud.auth, function (user) {
         cloud.user = user;
+        var warn = document.getElementById("localWarn");
         if (user) {
           btn.textContent = "로그아웃";
+          warn.hidden = true;
           cloudStatus(user.email + " · 동기화 확인 중…");
           pullCloud().then(pushCloud).catch(function (e) {
             cloudStatus("동기화 실패: " + (e.code || e.message));
           });
         } else {
           btn.textContent = "Google 로그인";
+          warn.hidden = false;
           cloudStatus("미로그인 — 이 기기에만 저장 중");
         }
       });
