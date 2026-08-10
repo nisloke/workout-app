@@ -109,6 +109,16 @@
   .syncrow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .syncrow button { padding: 10px 14px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); }
   .syncstatus { font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .schemerow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .infobtn { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--muscle); color: var(--muscle); background: none; font-size: 13px; font-weight: 700; font-style: italic; font-family: Georgia, serif; line-height: 1; padding: 0; }
+  .modal { position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modalbox { background: var(--card); color: var(--text); border-radius: 14px; max-width: 480px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 14px; }
+  .modalhead { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 15px; margin-bottom: 4px; }
+  .modalhead button { flex: none; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 14px; padding: 0; }
+  .info-sec { font-size: 12.5px; font-weight: 700; color: var(--muscle); margin: 12px 0 4px; }
+  .info-txt { font-size: 13.5px; line-height: 1.6; }
+  .ytwrap { margin-top: 8px; display: flex; justify-content: center; }
+  .ytwrap iframe { width: min(300px, 100%); aspect-ratio: 9 / 16; border: 0; border-radius: 10px; }
 </style>
 </head>
 <body>
@@ -196,90 +206,757 @@
   </div>
 </div>
 
+<div class="modal" id="infoModal" hidden>
+  <div class="modalbox">
+    <div class="modalhead"><b id="infoTitle"></b><button id="btnInfoClose" type="button" aria-label="닫기">✕</button></div>
+    <div id="infoBody"></div>
+  </div>
+</div>
+
 <script id="appdata" type="application/json">
 {
   "sessions": {
     "A": {
-      "days": "월·목", "label": "밀기 + 하체 전면",
-      "gym": "68:30", "strength": "49:30", "total": "76:30",
+      "days": "월·목",
+      "label": "밀기 + 하체 전면",
+      "gym": "68:30",
+      "strength": "49:30",
+      "total": "76:30",
       "slots": [
-        { "num": 1, "type": "ex", "rest": "2:00", "blocks": [ { "id": "a1", "muscle": "대퇴사두 — 바벨 복합", "scheme": "램프 2 + 3×5~8", "ramp": true, "options": [
-          { "id": "back-squat", "name": "바벨 백스쿼트", "tier": "B", "score": 9, "cue": "폼이 무너지기 직전에 세트 종료(실패 지점까지 가지 않기). 깊이는 뒤꿈치가 뜨지 않는 한도 내 최대" },
-          { "id": "leg-press", "name": "레그프레스", "tier": "S", "score": 14, "cue": "허리 부담 없음. 발 위치로 타겟 조절 — 부담 시 상시 대체 가능" },
-          { "id": "hack-squat", "name": "핵스쿼트", "tier": "S", "score": 14, "cue": "무릎 전방 부담 주의" },
-          { "id": "goblet-squat", "name": "고블렛 스쿼트", "tier": "A", "score": 13, "cue": "덤벨을 가슴 앞에 받쳐 들고 깊게 앉기 — 앞 중량이 상체 세움을 도움. 가벼운 중량으로 폼 연습 용도(채널 단서), 무거워지면 레그프레스·핵스쿼트로" },
-          { "id": "sissy-squat", "name": "시시 스쿼트", "tier": "B", "score": 10, "cue": "대퇴직근 특화 — 맨몸이라 중량 진행 제약" } ] } ] },
-        { "num": 2, "type": "ex", "rest": "2:00", "blocks": [ { "id": "a2", "muscle": "가슴 전체", "scheme": "램프 2 + 3×5~8", "ramp": true, "options": [
-          { "id": "bench", "name": "벤치프레스", "tier": "A", "score": 11, "cue": "폼이 무너지기 직전에 세트 종료. 어깨 불편 시 덤벨 벤치로 교체" },
-          { "id": "db-bench", "name": "덤벨 벤치프레스", "tier": "B", "score": 10, "cue": "스트레치 깊게, 컨트롤 우선(불안정성 큼)" },
-          { "id": "machine-chest-press", "name": "머신 체스트 프레스", "tier": "S", "score": 14, "cue": "벤치와 동급 이상 대체(rapid 기준)" } ] } ] },
-        { "num": 3, "type": "ss", "label": "S1", "rounds": 2, "rest": "1:00", "blocks": [
-          { "id": "a3a", "muscle": "가슴 상부", "scheme": "2×8~12", "options": [
-            { "id": "incline-db-press", "name": "인클라인 덤벨 프레스", "tier": "A", "score": 11, "cue": "등받이 30도" },
-            { "id": "incline-bench", "name": "인클라인 벤치프레스", "tier": "A", "score": 11, "cue": "바벨판 — 증량 추적 우위" } ] },
-          { "id": "a3b", "muscle": "코어 굴곡", "scheme": "2×10~15", "options": [
-            { "id": "crunch-machine", "name": "크런치 머신", "tier": "S", "score": 15, "cue": "마지막 세트 실패 근접 허용" },
-            { "id": "decline-situp", "name": "중량 디클라인 싯업", "tier": "A", "score": 13, "cue": "크런치 머신 부재 시 대안" } ] } ] },
-        { "num": 4, "type": "ss", "label": "S2", "rounds": 2, "rest": "1:00", "blocks": [
-          { "id": "a4a", "muscle": "가슴 고립", "scheme": "2×10~15", "options": [
-            { "id": "pec-deck", "name": "펙덱 플라이", "tier": "S", "score": 15, "cue": "스트레치 구간 강조. 마지막 세트 실패 후 부분반복 허용" },
-            { "id": "cable-fly", "name": "케이블 플라이", "tier": "A", "score": 11, "cue": "케이블 스테이션 점유 주의" },
-            { "id": "db-fly", "name": "덤벨 플라이", "tier": "B", "score": 9, "cue": "어깨 부담·난이도 주의" } ] },
-          { "id": "a4b", "muscle": "삼두", "scheme": "2×8~12", "options": [
-            { "id": "skullcrusher", "name": "스컬크러셔", "tier": "A", "score": 12, "cue": "이지바 또는 덤벨" },
-            { "id": "pushdown", "name": "트라이셉 푸시다운", "tier": "A", "score": 13, "cue": "수축 위주(신장 구간 저항 없음)" },
-            { "id": "oh-triceps-ext", "name": "오버헤드 트라이셉 익스텐션", "tier": "A", "score": 12, "cue": "장두 최대 신장 — 스컬크러셔 대체 가능" } ] } ] },
-        { "num": 5, "type": "ex", "rest": "1:30", "blocks": [ { "id": "a5", "muscle": "대퇴사두 — 고립", "scheme": "2×10~15", "options": [
-          { "id": "leg-extension", "name": "레그 익스텐션", "tier": "S", "score": 15, "cue": "반동 없이. 마지막 세트 실패 근접 허용" } ] } ] },
-        { "num": 6, "type": "ex", "rest": "1:30", "blocks": [ { "id": "a6", "muscle": "쿼드·둔근", "scheme": "2×8~12 (좌우 각)", "options": [
-          { "id": "bss", "name": "불가리안 스플릿 스쿼트", "tier": "B", "score": 10, "cue": "덤벨 들고, 앞무릎-발끝 정렬. 좌우 각 2세트(사용자 선호 편성)" } ] } ] },
-        { "num": 7, "type": "ex", "rest": "1:15", "blocks": [ { "id": "a7", "muscle": "측면어깨", "scheme": "3×12~15", "options": [
-          { "id": "cable-lateral-raise", "name": "케이블 사이드 래터럴 레이즈", "tier": "A", "score": 12, "cue": "반동 금지. 마지막 세트 실패 후 부분반복 허용" },
-          { "id": "db-lateral-raise", "name": "사이드 래터럴 레이즈(덤벨)", "tier": "A", "score": 11, "cue": "케이블 혼잡 시 대안. 반동 금지" } ] } ] }
+        {
+          "num": 1,
+          "type": "ex",
+          "rest": "2:00",
+          "blocks": [
+            {
+              "id": "a1",
+              "muscle": "대퇴사두 — 바벨 복합",
+              "scheme": "램프 2 + 3×5~8",
+              "ramp": true,
+              "options": [
+                {
+                  "id": "back-squat",
+                  "name": "바벨 백스쿼트",
+                  "tier": "B",
+                  "score": 9,
+                  "cue": "폼이 무너지기 직전에 세트 종료(실패 지점까지 가지 않기). 깊이는 뒤꿈치가 뜨지 않는 한도 내 최대",
+                  "why": "athlean이 기본 편성하는 표준 하체 패턴이고, rapid도 자기 루틴에 스쿼트를 주 2회 배치. 양측 기본 패턴 학습과 표준 증량에 최적 [설계 판단 병기]. 단 rapid 티어 채점상으로는 레그프레스(S)가 상위(§8 상충).",
+                  "warn": "실패 지점까지 가지 않기 — 폼이 무너지기 직전(속도 급감·자세 변형) 종료. 깊이는 뒤꿈치가 뜨지 않는 한도까지만. 부담되면 레그프레스로 상시 대체.",
+                  "yt": "N5I7SpFriTE"
+                },
+                {
+                  "id": "leg-press",
+                  "name": "레그프레스",
+                  "tier": "S",
+                  "score": 14,
+                  "cue": "허리 부담 없음. 발 위치로 타겟 조절 — 부담 시 상시 대체 가능",
+                  "why": "rapid 조건부 긍정 — 허리 부담 없이 쿼드에 고부하를 줄 수 있고 발 위치로 타겟 조절. 티어 S(14) — 스쿼트보다 효율 채점 상위.",
+                  "warn": "머신 공통 규칙: 마지막 세트만 실패 근접 허용. 무릎 불편감이 느껴지면 즉시 중지.",
+                  "yt": "xw2yT7Gwt7Q"
+                },
+                {
+                  "id": "hack-squat",
+                  "name": "핵스쿼트",
+                  "tier": "S",
+                  "score": 14,
+                  "cue": "무릎 전방 부담 주의",
+                  "why": "rapid \"가장 안정적인 머신\" 조건부 긍정 — 티어 S(14).",
+                  "warn": "무릎 전방 부담 주의(awesome 단서). 무릎 불편감 시 즉시 중지.",
+                  "yt": "kSY3PGOD0OY"
+                },
+                {
+                  "id": "goblet-squat",
+                  "name": "고블렛 스쿼트",
+                  "tier": "A",
+                  "score": 13,
+                  "cue": "덤벨을 가슴 앞에 받쳐 들고 깊게 앉기 — 앞 중량이 상체 세움을 도움. 가벼운 중량으로 폼 연습 용도(채널 단서), 무거워지면 레그프레스·핵스쿼트로",
+                  "why": "awesome 스쿼트 폼 학습 처방 — 앞에 든 중량이 상체 세움을 도와 자세 익히기에 좋음. 하체 페어링 옵션으로도 언급.",
+                  "warn": "채널 단서: 가벼운 중량으로 폼 연습 용도. 무거워지면 레그프레스·핵스쿼트로 전환.",
+                  "yt": "ltiO7lZPRdA"
+                },
+                {
+                  "id": "sissy-squat",
+                  "name": "시시 스쿼트",
+                  "tier": "B",
+                  "score": 10,
+                  "cue": "대퇴직근 특화 — 맨몸이라 중량 진행 제약",
+                  "why": "rapid 추천 — 대퇴직근 특화 신장 종목.",
+                  "warn": "맨몸이라 중량 진행 추적이 어려움. 무릎 불편감 시 즉시 중지(공통 규칙).",
+                  "yt": "UbN5tPZ-kmk"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 2,
+          "type": "ex",
+          "rest": "2:00",
+          "blocks": [
+            {
+              "id": "a2",
+              "muscle": "가슴 전체",
+              "scheme": "램프 2 + 3×5~8",
+              "ramp": true,
+              "options": [
+                {
+                  "id": "bench",
+                  "name": "벤치프레스",
+                  "tier": "A",
+                  "score": 11,
+                  "cue": "폼이 무너지기 직전에 세트 종료. 어깨 불편 시 덤벨 벤치로 교체",
+                  "why": "awesome·athlean이 기본 편성으로 수렴하는 수평 프레스 표준 — 증량 추적 용이 [설계 판단]. 단 rapid 티어상 머신 체스트 프레스가 동급 이상(§8 상충).",
+                  "warn": "실패 지점 금지 — 폼이 무너지기 직전 종료(athlean: 바벨은 탈출 문제). 어깨 불편 시 덤벨 벤치로 교체.",
+                  "yt": "gVyhGGmisLo"
+                },
+                {
+                  "id": "db-bench",
+                  "name": "덤벨 벤치프레스",
+                  "tier": "B",
+                  "score": 10,
+                  "cue": "스트레치 깊게, 컨트롤 우선(불안정성 큼)",
+                  "why": "rapid B — 깊은 스트레치가 강점이라는 채널 발언 그대로. 벤치 어깨 불편 시 1대안.",
+                  "warn": "가장 불안정한 판 — 컨트롤 우선. 무게 욕심 금지.",
+                  "yt": "CMc5GJVFG88"
+                },
+                {
+                  "id": "machine-chest-press",
+                  "name": "머신 체스트 프레스",
+                  "tier": "S",
+                  "score": 14,
+                  "cue": "벤치와 동급 이상 대체(rapid 기준)",
+                  "why": "rapid 티어상 벤치 동급 이상(머신 A0·라잉 해머 A+) + \"머신이 프리웨이트보다 열등할 본질적 이유가 없다\"는 채널 명시 발언. 티어 S(14).",
+                  "warn": "머신 공통: 마지막 세트만 실패 근접 허용.",
+                  "yt": "B7XERsTO7fA"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 3,
+          "type": "ss",
+          "label": "S1",
+          "rounds": 2,
+          "rest": "1:00",
+          "blocks": [
+            {
+              "id": "a3a",
+              "muscle": "가슴 상부",
+              "scheme": "2×8~12",
+              "options": [
+                {
+                  "id": "incline-db-press",
+                  "name": "인클라인 덤벨 프레스",
+                  "tier": "A",
+                  "score": 11,
+                  "cue": "등받이 30도",
+                  "why": "athlean 편성(가슴 상부 타겟) — 인클라인 각도로 상부 섬유 강조.",
+                  "warn": "등받이 30도(athlean note). 폼 유지 한도 내 수행.",
+                  "yt": "YzpUmUi5R10"
+                },
+                {
+                  "id": "incline-bench",
+                  "name": "인클라인 벤치프레스",
+                  "tier": "A",
+                  "score": 11,
+                  "cue": "바벨판 — 증량 추적 우위",
+                  "why": "awesome 추천 — 바벨판이라 증량 추적이 더 쉬움(덤벨판과 티어 동점 A).",
+                  "warn": "바벨 공통: 폼이 무너지기 직전 종료, 실패 금지.",
+                  "yt": "V9vJqJWXn_I"
+                }
+              ]
+            },
+            {
+              "id": "a3b",
+              "muscle": "코어 굴곡",
+              "scheme": "2×10~15",
+              "options": [
+                {
+                  "id": "crunch-machine",
+                  "name": "크런치 머신",
+                  "tier": "S",
+                  "score": 15,
+                  "cue": "마지막 세트 실패 근접 허용",
+                  "why": "rapid S — 중량을 조절할 수 있는 코어 굴곡 최상위, 티어 만점(15).",
+                  "warn": "마지막 세트 실패 근접 허용. 허리 통증 시 중지.",
+                  "yt": "mvWcAXNAK4o"
+                },
+                {
+                  "id": "decline-situp",
+                  "name": "중량 디클라인 싯업",
+                  "tier": "A",
+                  "score": 13,
+                  "cue": "크런치 머신 부재 시 대안",
+                  "why": "rapid A + 추천 발언 — 크런치 머신 부재 시 1대안(중량 안고 수행).",
+                  "warn": "허리 불편 시 중지. 반동 없이 통제.",
+                  "yt": "lPtomCycyvE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 4,
+          "type": "ss",
+          "label": "S2",
+          "rounds": 2,
+          "rest": "1:00",
+          "blocks": [
+            {
+              "id": "a4a",
+              "muscle": "가슴 고립",
+              "scheme": "2×10~15",
+              "options": [
+                {
+                  "id": "pec-deck",
+                  "name": "펙덱 플라이",
+                  "tier": "S",
+                  "score": 15,
+                  "cue": "스트레치 구간 강조. 마지막 세트 실패 후 부분반복 허용",
+                  "why": "rapid A+ \"피로 부담 없이 가슴을 제대로 자극\" — 티어 만점(15).",
+                  "warn": "스트레치 구간 강조. 실패 후 부분반복 허용(고립 공통).",
+                  "yt": "HdlYMpVdrZA"
+                },
+                {
+                  "id": "cable-fly",
+                  "name": "케이블 플라이",
+                  "tier": "A",
+                  "score": 11,
+                  "cue": "케이블 스테이션 점유 주의",
+                  "why": "rapid A0 — 전 구간 저항 유지되는 가슴 고립.",
+                  "warn": "케이블 스테이션 점유가 큼(채널 발언) — 혼잡 시 펙덱으로.",
+                  "yt": "ySZJCCOgIMo"
+                },
+                {
+                  "id": "db-fly",
+                  "name": "덤벨 플라이",
+                  "tier": "B",
+                  "score": 9,
+                  "cue": "어깨 부담·난이도 주의",
+                  "why": "rapid 스트레치 관점 상위 평가 — 단 초보 난이도 단서가 붙은 종목.",
+                  "warn": "초보 난이도·어깨 부담 단서(rapid·awesome) — 가볍게 컨트롤 위주로.",
+                  "yt": "HblIPV96GTU"
+                }
+              ]
+            },
+            {
+              "id": "a4b",
+              "muscle": "삼두",
+              "scheme": "2×8~12",
+              "options": [
+                {
+                  "id": "skullcrusher",
+                  "name": "스컬크러셔",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "이지바 또는 덤벨",
+                  "why": "awesome 기본운동 목록 + 장두 스트레치 확보(athlean 스트레치·완전수축 이중 포지션 원칙 부합).",
+                  "warn": "이지바 또는 덤벨 사용. 팔꿈치 불편 시 오버헤드 익스텐션·푸시다운으로 교체.",
+                  "yt": "ei_-H1CsXDo"
+                },
+                {
+                  "id": "pushdown",
+                  "name": "트라이셉 푸시다운",
+                  "tier": "A",
+                  "score": 13,
+                  "cue": "수축 위주(신장 구간 저항 없음)",
+                  "why": "rapid 추천(슈퍼세트 예시 종목) — 수축 강조형 삼두 고립.",
+                  "warn": "신장 구간 저항이 없는 프로파일(rapid 논지) — 스트레치형(스컬·오버헤드)과 병행 가치.",
+                  "yt": "tMk3aoGXsMY"
+                },
+                {
+                  "id": "oh-triceps-ext",
+                  "name": "오버헤드 트라이셉 익스텐션",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "장두 최대 신장 — 스컬크러셔 대체 가능",
+                  "why": "awesome 시연 — 장두 최대 신장 포지션.",
+                  "warn": "어깨 가동범위가 필요한 자세 — 불편하면 스컬크러셔로.",
+                  "yt": "1DMPj9ZuKKY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 5,
+          "type": "ex",
+          "rest": "1:30",
+          "blocks": [
+            {
+              "id": "a5",
+              "muscle": "대퇴사두 — 고립",
+              "scheme": "2×10~15",
+              "options": [
+                {
+                  "id": "leg-extension",
+                  "name": "레그 익스텐션",
+                  "tier": "S",
+                  "score": 15,
+                  "cue": "반동 없이. 마지막 세트 실패 근접 허용",
+                  "why": "rapid \"늘어난 부분 ROM\" 연구 언급 + awesome 무릎 강화 추천 — 티어 만점(15).",
+                  "warn": "반동 없이. 마지막 세트만 실패 근접 허용.",
+                  "yt": "XnnzPScNTYk"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 6,
+          "type": "ex",
+          "rest": "1:30",
+          "blocks": [
+            {
+              "id": "a6",
+              "muscle": "쿼드·둔근",
+              "scheme": "2×8~12 (좌우 각)",
+              "options": [
+                {
+                  "id": "bss",
+                  "name": "불가리안 스플릿 스쿼트",
+                  "tier": "B",
+                  "score": 10,
+                  "cue": "덤벨 들고, 앞무릎-발끝 정렬. 좌우 각 2세트(사용자 선호 편성)",
+                  "why": "awesome \"하체 운동의 끝판왕\" 마무리 강추천 + ★사용자 선호 편성.",
+                  "warn": "밸런스 난이도 높음 — 앞무릎-발끝 정렬 유지, 좌우 각 2세트. 덤벨 들고 수행.",
+                  "yt": "j9zlYSJNmzQ"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 7,
+          "type": "ex",
+          "rest": "1:15",
+          "blocks": [
+            {
+              "id": "a7",
+              "muscle": "측면어깨",
+              "scheme": "3×12~15",
+              "options": [
+                {
+                  "id": "cable-lateral-raise",
+                  "name": "케이블 사이드 래터럴 레이즈",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "반동 금지. 마지막 세트 실패 후 부분반복 허용",
+                  "why": "rapid 명시 우열 — \"케이블 레터럴 레이즈가 더 좋은 옵션\"(하단에서도 저항 유지).",
+                  "warn": "반동 금지(awesome 최우선 큐). 마지막 세트 실패 후 부분반복 허용(rapid).",
+                  "yt": "sbGQ1N1y_0w"
+                },
+                {
+                  "id": "db-lateral-raise",
+                  "name": "사이드 래터럴 레이즈(덤벨)",
+                  "tier": "A",
+                  "score": 11,
+                  "cue": "케이블 혼잡 시 대안. 반동 금지",
+                  "why": "rapid가 다양성 목적으로 병행 권고한 덤벨판 — 혼잡 시 대안.",
+                  "warn": "반동 금지(awesome). 하단 무저항 구간이 있는 프로파일임을 유의.",
+                  "yt": "1HhMAvo9zTg"
+                }
+              ]
+            }
+          ]
+        }
       ]
     },
     "B": {
-      "days": "화·금", "label": "당기기 + 하체 후면",
-      "gym": "61:20", "strength": "42:20", "total": "69:20",
+      "days": "화·금",
+      "label": "당기기 + 하체 후면",
+      "gym": "61:20",
+      "strength": "42:20",
+      "total": "69:20",
       "slots": [
-        { "num": 1, "type": "ex", "rest": "2:00", "blocks": [ { "id": "b1", "muscle": "햄스트링 — 힌지", "scheme": "램프 2 + 3×6~10", "ramp": true, "options": [
-          { "id": "rdl", "name": "루마니안 데드리프트", "tier": "A", "score": 12, "cue": "햄스트링 당김이 강해지기 직전 깊이까지만 — 회차마다 조금씩 확장" },
-          { "id": "stiff-leg-dl", "name": "스티프레그 데드리프트", "tier": null, "score": null, "cue": "RDL 대체 변형" } ] } ] },
-        { "num": 2, "type": "ex", "rest": "1:30", "blocks": [ { "id": "b2", "muscle": "광배 — 수직 당김", "scheme": "3×8~12", "options": [
-          { "id": "lat-pulldown", "name": "랫풀다운", "tier": "S", "score": 14, "cue": "풀업이 가능해지면 첫 세트를 풀업으로 승격" },
-          { "id": "pullup", "name": "풀업", "tier": "B", "score": 9, "cue": "체중 부하 — 가능해질 때 승격용" },
-          { "id": "one-arm-lat-pulldown", "name": "원암 랫풀다운", "tier": "A", "score": 13, "cue": "편측 수행 — 시간 2배" },
-          { "id": "neutral-pullup", "name": "뉴트럴그립 풀업", "tier": "B", "score": 9, "cue": "중급 이상" } ] } ] },
-        { "num": 3, "type": "ex", "rest": "1:30", "blocks": [ { "id": "b3", "muscle": "상부등 — 수평 당김", "scheme": "3×8~12", "options": [
-          { "id": "cs-machine-row", "name": "체스트 서포티드 머신 로우", "tier": "S", "score": 14, "cue": "팔꿈치 넓게 = 상부등" },
-          { "id": "seated-cable-row", "name": "시티드 케이블 로우", "tier": "S", "score": 14, "cue": "머신 로우 부재 시" },
-          { "id": "cs-tbar-row", "name": "체스트 서포티드 티바로우", "tier": "A", "score": 13, "cue": "플레이트 로딩" },
-          { "id": "incline-db-row", "name": "인클라인 벤치 덤벨로우", "tier": null, "score": null, "cue": "머신이 없을 때 — 인클라인 벤치에 가슴 대고" },
-          { "id": "kelso-shrug", "name": "켈소 슈러그", "tier": "A", "score": 12, "cue": "등상부 고립(부분 동작)" },
-          { "id": "barbell-row", "name": "바벨로우", "tier": "C", "score": 7, "cue": "허리 부담·전신 피로 큼(채널 간 평가 상충)" } ] } ] },
-        { "num": 4, "type": "ss", "label": "S1", "rounds": 2, "rest": "1:00", "blocks": [
-          { "id": "b4a", "muscle": "후면어깨", "scheme": "2×12~15", "options": [
-            { "id": "cable-reverse-fly", "name": "케이블 리버스 플라이", "tier": "S", "score": 14, "cue": "언제든 페이스풀로 교체 가능" },
-            { "id": "facepull", "name": "페이스풀", "tier": "A", "score": 12, "cue": "팔꿈치 90도 유지(상부등+회전근개 다면 효과)" },
-            { "id": "reverse-pec-deck", "name": "리버스 펙덱", "tier": "S", "score": 14, "cue": "셋업 간편한 머신판" } ] },
-          { "id": "b4b", "muscle": "이두", "scheme": "2×8~12", "options": [
-            { "id": "preacher-curl", "name": "프리처 컬", "tier": "S", "score": 15, "cue": "팔 고정 — 신장 구간 부하" },
-            { "id": "incline-db-curl", "name": "인클라인 덤벨 컬", "tier": "A", "score": 12, "cue": "깊은 신장" },
-            { "id": "barbell-curl", "name": "바벨컬", "tier": "A", "score": 12, "cue": "하단 저항 소실" },
-            { "id": "bayesian-curl", "name": "케이블 베이지언 컬", "tier": "A", "score": 12, "cue": "신장 구간 저항 유지" },
-            { "id": "hammer-curl", "name": "해머컬", "tier": "A", "score": 12, "cue": "상완근 타겟 — 팔 두께 목적" } ] } ] },
-        { "num": 5, "type": "ss", "label": "S2", "rounds": 2, "rest": "1:00", "blocks": [
-          { "id": "b5a", "muscle": "햄스트링 — 컬·원심성", "scheme": "2×3~8", "options": [
-            { "id": "nordic-curl", "name": "노르딕컬(어시스트)", "tier": "B", "score": 9, "cue": "밴드/랫풀 패드 어시스트. 내려가는 구간만 통제해도 1회로 침" },
-            { "id": "seated-leg-curl", "name": "시티드 레그컬", "tier": "S", "score": 14, "cue": "근비대 목적이면 정당한 교체" } ] },
-          { "id": "b5b", "muscle": "코어 안정", "scheme": "2×8~12", "options": [
-            { "id": "ab-rollout", "name": "앱 롤아웃", "tier": "B", "score": 10, "cue": "무릎 대고, 허리 처짐 금지" },
-            { "id": "pallof-press", "name": "팔로프 프레스", "tier": "A", "score": 11, "cue": "밴드/케이블을 명치~배꼽 높이로, 어깨 너비로 서서 몸 밖으로 밀고 1~2초 정지(안티로테이션) — 좌우 각. 채널 처방은 한쪽 2세트 15회" },
-            { "id": "plank", "name": "플랭크", "tier": "B", "score": 10, "cue": "롤아웃 진입 전 단계" } ] } ] },
-        { "num": 6, "type": "ex", "rest": "1:00", "blocks": [ { "id": "b6", "muscle": "종아리", "scheme": "2×10~15", "options": [
-          { "id": "standing-calf-raise", "name": "스탠딩 카프레이즈", "tier": "S", "score": 15, "cue": "하단 1초 정지" } ] } ] },
-        { "num": 7, "type": "ex", "rest": "1:30", "blocks": [ { "id": "b7", "muscle": "전신 파워", "scheme": "2×15~20", "options": [
-          { "id": "kettlebell-swing", "name": "케틀벨 스윙", "tier": "B", "score": 9, "cue": "힙 힌지 스냅 — 팔로 들지 않기(사용자 지정 종목)" } ] } ] }
+        {
+          "num": 1,
+          "type": "ex",
+          "rest": "2:00",
+          "blocks": [
+            {
+              "id": "b1",
+              "muscle": "햄스트링 — 힌지",
+              "scheme": "램프 2 + 3×6~10",
+              "ramp": true,
+              "options": [
+                {
+                  "id": "rdl",
+                  "name": "루마니안 데드리프트",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "햄스트링 당김이 강해지기 직전 깊이까지만 — 회차마다 조금씩 확장",
+                  "why": "rapid — 햄스트링을 가장 많이 신장시키고 하단에서 최대 부하가 걸리는 힌지. 힌지 축 대표 종목.",
+                  "warn": "햄 당김이 강해지기 직전 깊이까지만 — 회차마다 조금씩 확장(§7.5). 폼 무너지기 전 종료, 실패 금지.",
+                  "yt": "XBjaHAVmCL8"
+                },
+                {
+                  "id": "stiff-leg-dl",
+                  "name": "스티프레그 데드리프트",
+                  "tier": null,
+                  "score": null,
+                  "cue": "RDL 대체 변형",
+                  "why": "RDL 대체 변형(P1 (b) 참고) — 더 편 무릎으로 햄 신장 강조.",
+                  "warn": "RDL과 동일 — 당김 관리·폼 기준 종료.",
+                  "yt": "_EgAxz0LKbc"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 2,
+          "type": "ex",
+          "rest": "1:30",
+          "blocks": [
+            {
+              "id": "b2",
+              "muscle": "광배 — 수직 당김",
+              "scheme": "3×8~12",
+              "options": [
+                {
+                  "id": "lat-pulldown",
+                  "name": "랫풀다운",
+                  "tier": "S",
+                  "score": 14,
+                  "cue": "풀업이 가능해지면 첫 세트를 풀업으로 승격",
+                  "why": "rapid 초중급 A+ — 수직 당김 표준. 부하 조절이 쉬워 더블 프로그레션과 정합.",
+                  "warn": "반동 최소. 풀업이 가능해지면 첫 세트를 풀업으로 승격.",
+                  "yt": "uucD6XSsL-k"
+                },
+                {
+                  "id": "pullup",
+                  "name": "풀업",
+                  "tier": "B",
+                  "score": 9,
+                  "cue": "체중 부하 — 가능해질 때 승격용",
+                  "why": "rapid 상위 평가(영상 간 등급 상이 — P1 비고) — 승격 트랙 종목.",
+                  "warn": "체중 부하라 반복 확보가 어려움 — 반복이 안 나오면 랫풀다운 유지.",
+                  "yt": "fgU-najZIRc"
+                },
+                {
+                  "id": "one-arm-lat-pulldown",
+                  "name": "원암 랫풀다운",
+                  "tier": "A",
+                  "score": 13,
+                  "cue": "편측 수행 — 시간 2배",
+                  "why": "rapid S(광배 1위) — 편측이라 가동범위·스트레치 극대화.",
+                  "warn": "편측 수행이라 시간 2배. 셋업 학습 필요 — 숙련 후 승격 권장.",
+                  "yt": "Xz6B7RjYfUM"
+                },
+                {
+                  "id": "neutral-pullup",
+                  "name": "뉴트럴그립 풀업",
+                  "tier": "B",
+                  "score": 9,
+                  "cue": "중급 이상",
+                  "why": "rapid S — 단 채널 스스로 \"중급 이상\" 조건을 단 종목.",
+                  "warn": "중급 이상 단서 — 현 단계에서는 랫풀다운·풀업 먼저.",
+                  "yt": "xuL47BKuogg"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 3,
+          "type": "ex",
+          "rest": "1:30",
+          "blocks": [
+            {
+              "id": "b3",
+              "muscle": "상부등 — 수평 당김",
+              "scheme": "3×8~12",
+              "options": [
+                {
+                  "id": "cs-machine-row",
+                  "name": "체스트 서포티드 머신 로우",
+                  "tier": "S",
+                  "score": 14,
+                  "cue": "팔꿈치 넓게 = 상부등",
+                  "why": "rapid S(능형 최상위) — 가슴 지지로 허리 부담을 제거한 수평 당김.",
+                  "warn": "팔꿈치 넓게 = 상부등 타겟(athlean note). 마지막 세트만 실패 근접 허용.",
+                  "yt": "2OpNzwm0yLQ"
+                },
+                {
+                  "id": "seated-cable-row",
+                  "name": "시티드 케이블 로우",
+                  "tier": "S",
+                  "score": 14,
+                  "cue": "머신 로우 부재 시",
+                  "why": "athlean 편성 종목 — 머신 로우 부재 시 1대안. 티어 S(14).",
+                  "warn": "상체 반동 최소로 통제.",
+                  "yt": "Mdn2eVMRS_4"
+                },
+                {
+                  "id": "cs-tbar-row",
+                  "name": "체스트 서포티드 티바로우",
+                  "tier": "A",
+                  "score": 13,
+                  "cue": "플레이트 로딩",
+                  "why": "rapid A0~A+ — 저항 프로파일이 최적이라는 채널 발언.",
+                  "warn": "플레이트 로딩·언로딩 비용. 가슴 지지 유지.",
+                  "yt": "QdOSMMTBIhE"
+                },
+                {
+                  "id": "incline-db-row",
+                  "name": "인클라인 벤치 덤벨로우",
+                  "tier": null,
+                  "score": null,
+                  "cue": "머신이 없을 때 — 인클라인 벤치에 가슴 대고",
+                  "why": "머신 로우가 없을 때의 대안(§3 수행 기준) — 인클라인 벤치에 가슴 대고 수행.",
+                  "warn": "가슴을 벤치에서 떼지 않기(반동 억제).",
+                  "yt": "I0GhxcAcUdU"
+                },
+                {
+                  "id": "kelso-shrug",
+                  "name": "켈소 슈러그",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "등상부 고립(부분 동작)",
+                  "why": "rapid S — 단 '등상부 고립' 축 한정 평가. 로우에 견갑 움직임만 더한 부분 동작.",
+                  "warn": "견갑 움직임만으로 수행(팔로 당기지 않기). ※영상은 일반 슈러그 설명 — 켈소는 가슴 지지 후 견갑만 모으는 변형.",
+                  "yt": "A_KY3usZSeo"
+                },
+                {
+                  "id": "barbell-row",
+                  "name": "바벨로우",
+                  "tier": "C",
+                  "score": 7,
+                  "cue": "허리 부담·전신 피로 큼(채널 간 평가 상충)",
+                  "why": "awesome \"풀업과 바벨로우는 무조건 필요\" — 단 rapid는 B-(머신 대체 권고), §8 상충 항목.",
+                  "warn": "기립근 동원·허리 부담·전신 피로가 큼(rapid 논지) — 초보는 체스트 서포티드 계열 권장.",
+                  "yt": "0vn3a-TelK0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 4,
+          "type": "ss",
+          "label": "S1",
+          "rounds": 2,
+          "rest": "1:00",
+          "blocks": [
+            {
+              "id": "b4a",
+              "muscle": "후면어깨",
+              "scheme": "2×12~15",
+              "options": [
+                {
+                  "id": "cable-reverse-fly",
+                  "name": "케이블 리버스 플라이",
+                  "tier": "S",
+                  "score": 14,
+                  "cue": "언제든 페이스풀로 교체 가능",
+                  "why": "rapid S(자막상 확정 등급) — 후면어깨 최선.",
+                  "warn": "반동 금지. 원하면 페이스풀로 언제든 교체 가능(사용자 지정).",
+                  "yt": "N_Tdy_KLKkE"
+                },
+                {
+                  "id": "facepull",
+                  "name": "페이스풀",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "팔꿈치 90도 유지(상부등+회전근개 다면 효과)",
+                  "why": "athlean W2 마무리 편성 — 상부등 전반+회전근개 다면 효과. 사용자 지정: athlean 준용, rapid 비판 미반영(정정대장 #1).",
+                  "warn": "팔꿈치 90도 유지(athlean 큐).",
+                  "yt": "llipLjbyzn4"
+                },
+                {
+                  "id": "reverse-pec-deck",
+                  "name": "리버스 펙덱",
+                  "tier": "S",
+                  "score": 14,
+                  "cue": "셋업 간편한 머신판",
+                  "why": "rapid 추천(등급 자막 유실) — 셋업 간편한 머신판, 티어 동점 S(14).",
+                  "warn": "반동 금지. 마지막 세트만 실패 근접 허용.",
+                  "yt": "5-glaBh8RTc"
+                }
+              ]
+            },
+            {
+              "id": "b4b",
+              "muscle": "이두",
+              "scheme": "2×8~12",
+              "options": [
+                {
+                  "id": "preacher-curl",
+                  "name": "프리처 컬",
+                  "tier": "S",
+                  "score": 15,
+                  "cue": "팔 고정 — 신장 구간 부하",
+                  "why": "rapid 직접비교 연구 인용 — 프리처>인클라인. 팔 고정으로 안정+신장 구간 부하, 티어 만점(15).",
+                  "warn": "고립 공통: 마지막 세트만 실패 근접 허용.",
+                  "yt": "JgNDy69X3ck"
+                },
+                {
+                  "id": "incline-db-curl",
+                  "name": "인클라인 덤벨 컬",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "깊은 신장",
+                  "why": "awesome S — 깊은 신장 포지션의 이두 컬.",
+                  "warn": "rapid 직접비교에서는 프리처 우위(채널 간 상충, §8).",
+                  "yt": "HmcqRly16wk"
+                },
+                {
+                  "id": "barbell-curl",
+                  "name": "바벨컬",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "하단 저항 소실",
+                  "why": "athlean 편성(W1-1) 기본 컬.",
+                  "warn": "하단 저항 소실 프로파일(rapid 논지). 반동 금지.",
+                  "yt": "gl_9FKETgvU"
+                },
+                {
+                  "id": "bayesian-curl",
+                  "name": "케이블 베이지언 컬",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "신장 구간 저항 유지",
+                  "why": "rapid \"두 운동의 장점만 합친\" 추천 — 신장 구간 저항 유지 케이블 컬.",
+                  "warn": "케이블 셋업 학습 필요. P1 정식 편성은 하지 않기로 확정(정정대장 #6).",
+                  "yt": "2bbx4hu_wEs"
+                },
+                {
+                  "id": "hammer-curl",
+                  "name": "해머컬",
+                  "tier": "A",
+                  "score": 12,
+                  "cue": "상완근 타겟 — 팔 두께 목적",
+                  "why": "awesome A — 상완근 타겟(팔 두께 목적).",
+                  "warn": "반동 금지.",
+                  "yt": "W5SJjrUrRxE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 5,
+          "type": "ss",
+          "label": "S2",
+          "rounds": 2,
+          "rest": "1:00",
+          "blocks": [
+            {
+              "id": "b5a",
+              "muscle": "햄스트링 — 컬·원심성",
+              "scheme": "2×3~8",
+              "options": [
+                {
+                  "id": "nordic-curl",
+                  "name": "노르딕컬(어시스트)",
+                  "tier": "B",
+                  "score": 9,
+                  "cue": "밴드/랫풀 패드 어시스트. 내려가는 구간만 통제해도 1회로 침",
+                  "why": "ichon 명시 처방(전굴·다리찢기 목적의 원심성수축 근력) + awesome 리뷰논문 인용(노르딕>레그컬). 목적 가중 편성 — 효율 채점은 레그컬이 상위.",
+                  "warn": "어시스트 필수(밴드/랫풀 패드) — 내려가는 구간 통제만으로 1회. 햄 당김 관리(§7.5). ※영상은 시연(성공 사례) — how-to 쇼츠 부재.",
+                  "yt": "Dr5RuMfSt3Q"
+                },
+                {
+                  "id": "seated-leg-curl",
+                  "name": "시티드 레그컬",
+                  "tier": "S",
+                  "score": 14,
+                  "cue": "근비대 목적이면 정당한 교체",
+                  "why": "rapid 조건부(햄 단두를 유일하게 자극) — 효율 채점 S(14). 근비대 목적이면 정당한 교체.",
+                  "warn": "머신 공통: 마지막 세트만 실패 근접 허용.",
+                  "yt": "STDP7QBe-Ys"
+                }
+              ]
+            },
+            {
+              "id": "b5b",
+              "muscle": "코어 안정",
+              "scheme": "2×8~12",
+              "options": [
+                {
+                  "id": "ab-rollout",
+                  "name": "앱 롤아웃",
+                  "tier": "B",
+                  "score": 10,
+                  "cue": "무릎 대고, 허리 처짐 금지",
+                  "why": "rapid — 플랭크보다 강도 우위라는 논지의 안티익스텐션(코어 안정) 종목.",
+                  "warn": "무릎 대고 시작, 허리 처짐 금지 — 처지면 가동범위 축소.",
+                  "yt": "7iVKYX5JDas"
+                },
+                {
+                  "id": "pallof-press",
+                  "name": "팔로프 프레스",
+                  "tier": "A",
+                  "score": 11,
+                  "cue": "밴드/케이블을 명치~배꼽 높이로, 어깨 너비로 서서 몸 밖으로 밀고 1~2초 정지(안티로테이션) — 좌우 각. 채널 처방은 한쪽 2세트 15회",
+                  "why": "awesome \"플랭크 대신 이 4가지\" 처방 중 하나 — 회전에 저항하는 안티로테이션 훈련(사용자 지정 추가, 정정대장 #5).",
+                  "warn": "밴드/케이블을 명치~배꼽 높이로, 밀고 1~2초 정지, 반드시 좌우 각. 채널 처방은 한쪽 2세트 15회.",
+                  "yt": "r1TAYonhYZQ"
+                },
+                {
+                  "id": "plank",
+                  "name": "플랭크",
+                  "tier": "B",
+                  "score": 10,
+                  "cue": "롤아웃 진입 전 단계",
+                  "why": "awesome 기본 추천 — 단 rapid D(저항 부족), §8 상충. 롤아웃 진입 전 단계로만.",
+                  "warn": "허리 처짐 금지. 쉬워지면 롤아웃으로 승급.",
+                  "yt": "mUDVAgXyqZg"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 6,
+          "type": "ex",
+          "rest": "1:00",
+          "blocks": [
+            {
+              "id": "b6",
+              "muscle": "종아리",
+              "scheme": "2×10~15",
+              "options": [
+                {
+                  "id": "standing-calf-raise",
+                  "name": "스탠딩 카프레이즈",
+                  "tier": "S",
+                  "score": 15,
+                  "cue": "하단 1초 정지",
+                  "why": "ichon 처방(노르딕컬과 병행) — 티어 만점(15).",
+                  "warn": "하단 1초 정지(신장 강조) — 반동 금지.",
+                  "yt": "ldmGt7BnXqE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 7,
+          "type": "ex",
+          "rest": "1:30",
+          "blocks": [
+            {
+              "id": "b7",
+              "muscle": "전신 파워",
+              "scheme": "2×15~20",
+              "options": [
+                {
+                  "id": "kettlebell-swing",
+                  "name": "케틀벨 스윙",
+                  "tier": "B",
+                  "score": 9,
+                  "cue": "힙 힌지 스냅 — 팔로 들지 않기(사용자 지정 종목)",
+                  "why": "사용자 지정 편성 — 전사 0건(인접 변형만 실재: awesome 덤벨 스윙·케틀벨 웨이트 시프트).",
+                  "warn": "힙 힌지 스냅으로 보내기 — 팔로 들지 않기. 허리 불편 시 중지.",
+                  "yt": "i62DPCCMSRo"
+                }
+              ]
+            }
+          ]
+        }
       ]
     }
   },
@@ -287,24 +964,64 @@
     "totalSec": 480,
     "place": "집 — 출발 전 수행. 준비물: 저항 밴드(집 상비). 정적 스트레칭은 세션 밖 별도. 센터 공간이 있는 날은 유산소 5분 뒤 수행해도 동일.",
     "rows": [
-      { "t": "0:00–3:30", "sec": 210, "name": "이촌동 복압 운동(다이애거널 스트레칭)", "how": "선 자세, 발은 골반 너비. 한쪽 방향으로 ① 몸통 기울이기(반드시 먼저) → ② 몸통·골반 회전 → ③ 손을 뻗어 바닥(안 되면 정강이) 터치 → ④ 역순으로 올라오기. 동작 내내 가늘고 긴 호흡, 허리를 뒤로 젖히는 동작은 최소. 좌 105초(15~20회) → 우 105초. 반드시 한쪽씩(양측 동시 금지)" },
-      { "t": "3:30–5:00", "sec": 90, "name": "부장가아사나(동적)", "how": "엎드려 손 짚고 상체 올려 5초 유지(가늘고 긴 호흡) 후 복귀 ×8회. 허리 불편하면 전완 지지 저강도 단계" },
-      { "t": "5:00–6:00", "sec": 60, "name": "리버스 노르딕", "how": "하프닐링에서 상체 곧게 유지한 채 뒤로 기울였다 복귀 6~8회. 좌 30초 → 우 30초" },
-      { "t": "6:00–7:00", "sec": 60, "name": "박스 한발 스쿼트", "how": "의자·박스에 살짝 터치하고 일어서기, 무릎-발끝 정렬. 좌 30초(5~6회) → 우 30초" },
-      { "t": "7:00–8:00", "sec": 60, "name": "밴드 당기기", "how": "밴드를 얼굴 방향으로 고반복 당기기 25~30회, 견갑 움직임 크게" }
+      {
+        "t": "0:00–3:30",
+        "sec": 210,
+        "name": "이촌동 복압 운동(다이애거널 스트레칭)",
+        "how": "선 자세, 발은 골반 너비. 한쪽 방향으로 ① 몸통 기울이기(반드시 먼저) → ② 몸통·골반 회전 → ③ 손을 뻗어 바닥(안 되면 정강이) 터치 → ④ 역순으로 올라오기. 동작 내내 가늘고 긴 호흡, 허리를 뒤로 젖히는 동작은 최소. 좌 105초(15~20회) → 우 105초. 반드시 한쪽씩(양측 동시 금지)"
+      },
+      {
+        "t": "3:30–5:00",
+        "sec": 90,
+        "name": "부장가아사나(동적)",
+        "how": "엎드려 손 짚고 상체 올려 5초 유지(가늘고 긴 호흡) 후 복귀 ×8회. 허리 불편하면 전완 지지 저강도 단계"
+      },
+      {
+        "t": "5:00–6:00",
+        "sec": 60,
+        "name": "리버스 노르딕",
+        "how": "하프닐링에서 상체 곧게 유지한 채 뒤로 기울였다 복귀 6~8회. 좌 30초 → 우 30초"
+      },
+      {
+        "t": "6:00–7:00",
+        "sec": 60,
+        "name": "박스 한발 스쿼트",
+        "how": "의자·박스에 살짝 터치하고 일어서기, 무릎-발끝 정렬. 좌 30초(5~6회) → 우 30초"
+      },
+      {
+        "t": "7:00–8:00",
+        "sec": 60,
+        "name": "밴드 당기기",
+        "how": "밴드를 얼굴 방향으로 고반복 당기기 25~30회, 견갑 움직임 크게"
+      }
     ]
   },
   "warmup": {
     "totalSec": 300,
     "rows": [
-      { "t": "0:00–4:00", "sec": 240, "name": "트레드밀 걷기", "how": "보통 속도(체온 상승 목적)" },
-      { "t": "4:00–5:00", "sec": 60, "name": "마지막 1분", "how": "빠르게" }
+      {
+        "t": "0:00–4:00",
+        "sec": 240,
+        "name": "트레드밀 걷기",
+        "how": "보통 속도(체온 상승 목적)"
+      },
+      {
+        "t": "4:00–5:00",
+        "sec": 60,
+        "name": "마지막 1분",
+        "how": "빠르게"
+      }
     ]
   },
   "cardio": {
     "totalSec": 840,
     "rows": [
-      { "t": "0:00–14:00", "sec": 840, "name": "경사 빠른 걷기 또는 고정 자전거", "how": "숨은 차지만 짧은 문장 대화가 가능한 강도 유지" }
+      {
+        "t": "0:00–14:00",
+        "sec": 840,
+        "name": "경사 빠른 걷기 또는 고정 자전거",
+        "how": "숨은 차지만 짧은 문장 대화가 가능한 강도 유지"
+      }
     ],
     "note": "순서 고정: 근력 먼저 → 유산소 나중. 진행: 4주마다 경사 또는 저항 1단계 상향."
   }
@@ -434,7 +1151,16 @@
     var cur = block.options.filter(function (o) { return o.id === curId; })[0];
 
     var schemeText = block.scheme + (block.restText ? " · 휴식 " + block.restText : "");
-    wrap.appendChild(el("div", "scheme", schemeText));
+    var schemeRow = el("div", "schemerow");
+    schemeRow.appendChild(el("div", "scheme", schemeText));
+    var ib = document.createElement("button");
+    ib.type = "button";
+    ib.className = "infobtn";
+    ib.textContent = "i";
+    ib.setAttribute("aria-label", cur.name + " 정보");
+    ib.addEventListener("click", function () { openInfo(cur); });
+    schemeRow.appendChild(ib);
+    wrap.appendChild(schemeRow);
     if (block.ramp) wrap.appendChild(el("div", "ramp", "램프 = 본세트 무게의 약 50%×8회 → 75%×3회"));
     wrap.appendChild(el("div", "tierline", cur.tier ? "티어 " + cur.tier + " · " + cur.score + "/15" : "티어 미채점"));
     wrap.appendChild(el("div", "cue", cur.cue));
@@ -704,6 +1430,40 @@
     return { dates: pts.map(function (p) { return p.d; }), points: pts };
   }
   function fmt1(v) { return String(Math.round(v * 10) / 10); }
+
+  // 종목 정보 팝업 — 추천 사유(전사 요약)·주의사항·시연 쇼츠 (영상은 열 때만 로드)
+  var infoModal = document.getElementById("infoModal");
+  function openInfo(o) {
+    document.getElementById("infoTitle").textContent = o.name;
+    var b = document.getElementById("infoBody");
+    b.textContent = "";
+    b.appendChild(el("div", "info-sec", "추천 사유"));
+    b.appendChild(el("div", "info-txt", o.why || "—"));
+    b.appendChild(el("div", "info-sec", "주의사항"));
+    b.appendChild(el("div", "info-txt", o.warn || "—"));
+    b.appendChild(el("div", "info-sec", "시연 영상 (YouTube Shorts)"));
+    if (o.yt) {
+      var w = el("div", "ytwrap");
+      var f = document.createElement("iframe");
+      f.src = "https://www.youtube-nocookie.com/embed/" + o.yt;
+      f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      f.allowFullscreen = true;
+      w.appendChild(f);
+      b.appendChild(w);
+      b.appendChild(el("div", "chart-note", "외부 유튜브 쇼츠(참고용) — 수행 기준은 카드의 디렉션·진행 규칙이 우선. 영상이 이상하면 교체 요청"));
+    } else {
+      b.appendChild(el("div", "info-txt", "(영상 미지정)"));
+    }
+    infoModal.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+  function closeInfo() {
+    document.getElementById("infoBody").textContent = "";
+    infoModal.hidden = true;
+    document.body.style.overflow = "";
+  }
+  document.getElementById("btnInfoClose").addEventListener("click", closeInfo);
+  infoModal.addEventListener("click", function (e) { if (e.target === infoModal) closeInfo(); });
 
   // 종목 id → 이름·세션 내 순서 (세부 기록 표시용)
   var EXIDX = {};
