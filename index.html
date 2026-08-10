@@ -1,0 +1,967 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>주 4회 2분할 · 운동 기록</title>
+<style>
+  :root {
+    --bg: #f2f4f7; --card: #ffffff; --text: #1a2233; --muted: #6b7280; --line: #e2e6ec;
+    --border: #cfd6e0; --accent: #1d4ed8; --accent-text: #ffffff;
+    --cue-bg: #f6f8fb; --cue-border: #8fa3c0; --last-bg: #f0fdf4; --last-text: #166534;
+    --warn-bg: #fffbeb; --warn-text: #92400e; --muscle: #5a6b85; --hint: #9aa4b2;
+    --dashed: #d5dae3; --rowline: #eef0f4; --head: #33415c;
+    --shadow: 0 1px 2px rgba(0,0,0,.06);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10151f; --card: #1a2230; --text: #e7ebf3; --muted: #9aa4b6; --line: #28303f;
+      --border: #3b455a; --accent: #3d6bff; --accent-text: #ffffff;
+      --cue-bg: #222b3c; --cue-border: #5c7396; --last-bg: #152b1d; --last-text: #8fd9a8;
+      --warn-bg: #2c2410; --warn-text: #e4b95e; --muscle: #8fa0ba; --hint: #6e7889;
+      --dashed: #3a4459; --rowline: #28303f; --head: #c3cde0;
+      --shadow: 0 1px 2px rgba(0,0,0,.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10151f; --card: #1a2230; --text: #e7ebf3; --muted: #9aa4b6; --line: #28303f;
+    --border: #3b455a; --accent: #3d6bff; --accent-text: #ffffff;
+    --cue-bg: #222b3c; --cue-border: #5c7396; --last-bg: #152b1d; --last-text: #8fd9a8;
+    --warn-bg: #2c2410; --warn-text: #e4b95e; --muscle: #8fa0ba; --hint: #6e7889;
+    --dashed: #3a4459; --rowline: #28303f; --head: #c3cde0;
+    --shadow: 0 1px 2px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Malgun Gothic", sans-serif; background: var(--bg); color: var(--text); font-size: 16px; }
+  header { position: sticky; top: 0; z-index: 10; background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 12px 8px; }
+  .hrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+  header h1 { margin: 0; font-size: 16px; }
+  .hbtns { display: flex; gap: 6px; }
+  .hbtns button { font-size: 13px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+  .tabs { display: flex; gap: 8px; }
+  .tabs button { flex: 1; padding: 10px 4px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--muscle); }
+  .tabs button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  main { max-width: 520px; margin: 0 auto; padding: 12px 12px 56px; }
+  h2 { font-size: 15px; margin: 22px 4px 8px; color: var(--head); }
+  .card { background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .note { font-size: 13px; color: var(--muted); margin: 4px 4px 8px; }
+  .order { font-size: 14px; line-height: 1.6; }
+  .order b { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 6px 4px; border-top: 1px solid var(--rowline); vertical-align: top; line-height: 1.5; }
+  tr:first-child td { border-top: none; }
+  td.t { white-space: nowrap; color: var(--accent); font-weight: 700; width: 78px; }
+  td .nm { font-weight: 700; display: block; }
+  .ex + .ex { border-top: 1px dashed var(--dashed); margin-top: 12px; padding-top: 12px; }
+  .muscle { font-weight: 700; font-size: 13px; color: var(--muscle); }
+  select { width: 100%; font-size: 17px; font-weight: 700; padding: 10px; margin: 6px 0 4px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); }
+  .scheme { font-size: 15px; font-weight: 700; }
+  .ramp { font-size: 12.5px; color: var(--muted); }
+  .tierline { font-size: 12.5px; color: var(--muted); margin: 2px 0; }
+  .cue { font-size: 13.5px; background: var(--cue-bg); border-left: 3px solid var(--cue-border); padding: 6px 8px; border-radius: 6px; margin: 6px 0; line-height: 1.5; }
+  .last { font-size: 13px; color: var(--last-text); background: var(--last-bg); border-radius: 6px; padding: 5px 8px; margin: 6px 0; line-height: 1.5; }
+  .last.none { color: var(--hint); background: var(--cue-bg); }
+  .inrow { display: flex; gap: 8px; margin-top: 6px; }
+  .inrow > div { flex: 1; }
+  .inrow label, .memolab { display: block; font-size: 11.5px; color: var(--muted); margin-bottom: 2px; }
+  .wlabrow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+  .wlabrow label { margin-bottom: 0; }
+  .units { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .units button { font-size: 11px; padding: 2px 8px; border: none; background: var(--card); color: var(--muted); }
+  .units button.on { background: var(--accent); color: var(--accent-text); }
+  input[type=number], input[type=text] { width: 100%; font-size: 17px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+  .memo { margin-top: 6px; }
+  .savedhint { font-size: 11px; color: var(--hint); text-align: right; height: 14px; margin-top: 2px; }
+  .sshead { font-weight: 700; font-size: 14px; }
+  .ssnote { font-size: 12.5px; color: var(--muted); margin: 4px 0 8px; line-height: 1.5; }
+  ul.rules { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.65; }
+  ul.rules li { margin-bottom: 6px; }
+  .btnrow { display: flex; gap: 8px; margin: 8px 0; }
+  .btnrow button { flex: 1; padding: 12px 4px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); }
+  .warn { font-size: 12.5px; color: var(--warn-text); background: var(--warn-bg); border-radius: 8px; padding: 8px 10px; line-height: 1.55; }
+  footer { font-size: 11.5px; color: var(--hint); text-align: center; padding: 16px 12px 24px; line-height: 1.6; }
+  .chartwrap svg { width: 100%; height: auto; display: block; }
+  .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .chart-note { font-size: 11.5px; color: var(--hint); margin-top: 4px; line-height: 1.5; }
+  .chart-empty { font-size: 13px; color: var(--hint); padding: 14px 0; text-align: center; }
+  .legend { display: flex; gap: 12px; font-size: 11.5px; color: var(--muted); margin: 2px 0 4px; }
+  .legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+  .overlay { position: fixed; inset: 0; z-index: 50; background: var(--bg); overflow-y: auto; }
+  .ovhead { position: sticky; top: 0; z-index: 51; background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 12px; display: flex; align-items: center; gap: 10px; font-size: 15px; }
+  .ovhead button { font-size: 13px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
+  .ovin { max-width: 520px; margin: 0 auto; padding: 4px 12px 48px; }
+  .dc-face { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 0; font: inherit; color: inherit; text-align: left; }
+  .dc-date { font-weight: 700; font-size: 14px; }
+  .dc-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; color: #fff; }
+  .badge-A { background: var(--accent); }
+  .badge-B { background: #10b981; }
+  .badge-AB { background: linear-gradient(90deg, var(--accent), #10b981); }
+  .dc-score { margin-left: auto; font-weight: 700; font-size: 14px; }
+  .dc-caret { color: var(--hint); font-size: 11px; }
+  .dc-body { display: none; margin-top: 8px; border-top: 1px dashed var(--dashed); padding-top: 8px; }
+  .datecard.open .dc-body { display: block; }
+  .dc-item { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; padding: 3px 0; line-height: 1.5; }
+  .dc-item .val { white-space: nowrap; color: var(--muted); }
+  .dc-memo { font-size: 12px; color: var(--hint); margin: -2px 0 4px; }
+  .syncrow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .syncrow button { padding: 10px 14px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); }
+  .syncstatus { font-size: 12px; color: var(--muted); line-height: 1.4; }
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <h1>주 4회 2분할 · 운동 기록</h1>
+    <div class="hbtns">
+      <button id="btnRecords" type="button">📊 기록</button>
+      <button id="btnTheme" type="button" aria-label="다크/라이트 전환">🌙</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button id="tabA" type="button">A · 밀기+하체 전면 (월·목)</button>
+    <button id="tabB" type="button">B · 당기기+하체 후면 (화·금)</button>
+  </div>
+</header>
+<main>
+  <div class="card" id="scoreCard"></div>
+  <div class="card order" id="orderBox"></div>
+
+  <h2>오늘 컨디션 — 체중·수면</h2>
+  <div class="card" id="dailyCard"></div>
+
+  <h2>① 집 모빌리티 대본 — 8:00 (480초)</h2>
+  <div class="note" id="mobNote"></div>
+  <div class="card"><table id="mobTable"></table></div>
+
+  <h2>② 헬스장 · 유산소 워밍업 — 5:00</h2>
+  <div class="card"><table id="warmupTable"></table></div>
+
+  <h2 id="strengthHead"></h2>
+  <div class="note">세트 중단 기준: 바벨 복합(스쿼트·벤치·RDL)은 폼이 무너지기 직전 종료(실패 지점 금지) / 머신·고립은 마지막 세트만 실패 근접 허용. 휴식시간은 6주 고정.</div>
+  <div id="strength"></div>
+
+  <h2>④ 유산소 본절 — 14:00</h2>
+  <div class="card"><table id="cardioTable"></table></div>
+  <div class="note" id="cardioNote"></div>
+
+  <h2>진행 규칙 — 이 파일만으로 완결</h2>
+  <div class="card"><ul class="rules">
+    <li><b>언제 무게를 올리나:</b> 모든 본세트에서 반복 범위 <b>상한</b>을 채우면 다음 세션에 증량 — 바벨 +2.5kg(스쿼트·RDL은 +2.5~5kg), 덤벨은 다음 단위, 머신은 1칸.</li>
+    <li>증량 후 반복이 범위 <b>하한 밑</b>으로 떨어지면 잘못된 증량 — 직전 무게로 복귀.</li>
+    <li>같은 종목이 <b>3세션 연속</b> 반복수 증가 없음 → 무게 10% 줄이고 다시 올라가기.</li>
+    <li>기록 요령: 무게와 <b>마지막 세트의 반복수</b>를 적는다(증량 판단 기준이 되는 세트). 마지막 세트에서 이전보다 실패지점에 빨리 도달했다면 메모에 남긴다.</li>
+    <li>휴식시간은 <b>6주 고정</b> — 컨디션이 좋아도 줄이지 않는다.</li>
+    <li>슈퍼세트: 두 종목을 쉬지 않고 1세트씩 이어서 하면 1라운드, <b>라운드 사이에만</b> 휴식.</li>
+    <li>1주 이내 공백은 보충 없이 그냥 이어서 진행.</li>
+    <li>유산소 진행: 4주마다 경사 또는 저항 1단계 상향.</li>
+    <li>모빌리티 측정(대본과 분리): 4주마다 토요일 10분 — ① 선 전굴(손끝-바닥 cm) ② 벽 어깨 굴곡(엄지-벽 이격) ③ 무릎-벽 발목 테스트(발끝-벽 cm).</li>
+    <li><b>관절(허리·무릎 등) 문제가 느껴지면 즉시 중지.</b> RDL·로우의 햄스트링 당김은 당김이 강해지기 직전 깊이에서 반복하고 회차마다 조금씩 확장.</li>
+  </ul></div>
+
+  <h2>기록 데이터 관리</h2>
+  <div class="card">
+    <div class="syncrow" id="syncRow" hidden>
+      <button type="button" id="btnSync">Google 로그인</button>
+      <span id="syncStatus" class="syncstatus"></span>
+    </div>
+    <div class="btnrow">
+      <button type="button" id="btnExport">내보내기 (JSON)</button>
+      <button type="button" id="btnImport">불러오기</button>
+    </div>
+    <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
+    <div class="warn">기록은 현재 이 기기 브라우저(localStorage)에만 저장된다 — 임시 방식이며, 실사용 배포(GitHub Pages) 시 Firebase 기록으로 전환 예정. 파일을 직접 열어 쓰는 경우(file://) 브라우저 데이터 정리 시 유실될 수 있으니 <b>주 1회 내보내기</b>를 권장. 불러오기는 현재 기록 전체를 파일 내용으로 교체한다.</div>
+  </div>
+
+  <footer>
+    정본: 프로그램-주4회-2분할.md · 근육별-티어리스트.md — 내용 수정은 MD에서 먼저.<br>
+    티어 표기 = 근육별-티어리스트.md 5축 채점(15점 만점, S/A/B/C). 기록은 슬롯·종목별로 따로 저장된다.
+  </footer>
+</main>
+
+<div class="overlay" id="recordsView" hidden>
+  <div class="ovhead"><button id="btnBack" type="button">← 돌아가기</button><b>기록 차트</b></div>
+  <div class="ovin">
+    <h2>체중 (kg)</h2>
+    <div class="card" id="chartBw"></div>
+    <h2>수면시간 (h)</h2>
+    <div class="card" id="chartSleep"></div>
+    <h2>운동 점수 — 무게×횟수 합 (kg 환산)</h2>
+    <div class="card" id="chartScore"></div>
+    <h2>날짜별 세부 기록</h2>
+    <div id="dayList"></div>
+  </div>
+</div>
+
+<script id="appdata" type="application/json">
+{
+  "sessions": {
+    "A": {
+      "days": "월·목", "label": "밀기 + 하체 전면",
+      "gym": "68:30", "strength": "49:30", "total": "76:30",
+      "slots": [
+        { "num": 1, "type": "ex", "rest": "2:00", "blocks": [ { "id": "a1", "muscle": "대퇴사두 — 바벨 복합", "scheme": "램프 2 + 3×5~8", "ramp": true, "options": [
+          { "id": "back-squat", "name": "바벨 백스쿼트", "tier": "B", "score": 9, "cue": "폼이 무너지기 직전에 세트 종료(실패 지점까지 가지 않기). 깊이는 뒤꿈치가 뜨지 않는 한도 내 최대" },
+          { "id": "leg-press", "name": "레그프레스", "tier": "S", "score": 14, "cue": "허리 부담 없음. 발 위치로 타겟 조절 — 부담 시 상시 대체 가능" },
+          { "id": "hack-squat", "name": "핵스쿼트", "tier": "S", "score": 14, "cue": "무릎 전방 부담 주의" },
+          { "id": "sissy-squat", "name": "시시 스쿼트", "tier": "B", "score": 10, "cue": "대퇴직근 특화 — 맨몸이라 중량 진행 제약" } ] } ] },
+        { "num": 2, "type": "ex", "rest": "2:00", "blocks": [ { "id": "a2", "muscle": "가슴 전체", "scheme": "램프 2 + 3×5~8", "ramp": true, "options": [
+          { "id": "bench", "name": "벤치프레스", "tier": "A", "score": 11, "cue": "폼이 무너지기 직전에 세트 종료. 어깨 불편 시 덤벨 벤치로 교체" },
+          { "id": "db-bench", "name": "덤벨 벤치프레스", "tier": "B", "score": 10, "cue": "스트레치 깊게, 컨트롤 우선(불안정성 큼)" },
+          { "id": "machine-chest-press", "name": "머신 체스트 프레스", "tier": "S", "score": 14, "cue": "벤치와 동급 이상 대체(rapid 기준)" } ] } ] },
+        { "num": 3, "type": "ss", "label": "S1", "rounds": 2, "rest": "1:00", "blocks": [
+          { "id": "a3a", "muscle": "가슴 상부", "scheme": "2×8~12", "options": [
+            { "id": "incline-db-press", "name": "인클라인 덤벨 프레스", "tier": "A", "score": 11, "cue": "등받이 30도" },
+            { "id": "incline-bench", "name": "인클라인 벤치프레스", "tier": "A", "score": 11, "cue": "바벨판 — 증량 추적 우위" } ] },
+          { "id": "a3b", "muscle": "코어 굴곡", "scheme": "2×10~15", "options": [
+            { "id": "crunch-machine", "name": "크런치 머신", "tier": "S", "score": 15, "cue": "마지막 세트 실패 근접 허용" },
+            { "id": "decline-situp", "name": "중량 디클라인 싯업", "tier": "A", "score": 13, "cue": "크런치 머신 부재 시 대안" } ] } ] },
+        { "num": 4, "type": "ss", "label": "S2", "rounds": 2, "rest": "1:00", "blocks": [
+          { "id": "a4a", "muscle": "가슴 고립", "scheme": "2×10~15", "options": [
+            { "id": "pec-deck", "name": "펙덱 플라이", "tier": "S", "score": 15, "cue": "스트레치 구간 강조. 마지막 세트 실패 후 부분반복 허용" },
+            { "id": "cable-fly", "name": "케이블 플라이", "tier": "A", "score": 11, "cue": "케이블 스테이션 점유 주의" },
+            { "id": "db-fly", "name": "덤벨 플라이", "tier": "B", "score": 9, "cue": "어깨 부담·난이도 주의" } ] },
+          { "id": "a4b", "muscle": "삼두", "scheme": "2×8~12", "options": [
+            { "id": "skullcrusher", "name": "스컬크러셔", "tier": "A", "score": 12, "cue": "이지바 또는 덤벨" },
+            { "id": "pushdown", "name": "트라이셉 푸시다운", "tier": "A", "score": 13, "cue": "수축 위주(신장 구간 저항 없음)" },
+            { "id": "oh-triceps-ext", "name": "오버헤드 트라이셉 익스텐션", "tier": "A", "score": 12, "cue": "장두 최대 신장 — 스컬크러셔 대체 가능" } ] } ] },
+        { "num": 5, "type": "ex", "rest": "1:30", "blocks": [ { "id": "a5", "muscle": "대퇴사두 — 고립", "scheme": "2×10~15", "options": [
+          { "id": "leg-extension", "name": "레그 익스텐션", "tier": "S", "score": 15, "cue": "반동 없이. 마지막 세트 실패 근접 허용" } ] } ] },
+        { "num": 6, "type": "ex", "rest": "1:30", "blocks": [ { "id": "a6", "muscle": "쿼드·둔근", "scheme": "2×8~12 (좌우 각)", "options": [
+          { "id": "bss", "name": "불가리안 스플릿 스쿼트", "tier": "B", "score": 10, "cue": "덤벨 들고, 앞무릎-발끝 정렬. 좌우 각 2세트(사용자 선호 편성)" } ] } ] },
+        { "num": 7, "type": "ex", "rest": "1:15", "blocks": [ { "id": "a7", "muscle": "측면어깨", "scheme": "3×12~15", "options": [
+          { "id": "cable-lateral-raise", "name": "케이블 사이드 래터럴 레이즈", "tier": "A", "score": 12, "cue": "반동 금지. 마지막 세트 실패 후 부분반복 허용" },
+          { "id": "db-lateral-raise", "name": "사이드 래터럴 레이즈(덤벨)", "tier": "A", "score": 11, "cue": "케이블 혼잡 시 대안. 반동 금지" } ] } ] }
+      ]
+    },
+    "B": {
+      "days": "화·금", "label": "당기기 + 하체 후면",
+      "gym": "61:20", "strength": "42:20", "total": "69:20",
+      "slots": [
+        { "num": 1, "type": "ex", "rest": "2:00", "blocks": [ { "id": "b1", "muscle": "햄스트링 — 힌지", "scheme": "램프 2 + 3×6~10", "ramp": true, "options": [
+          { "id": "rdl", "name": "루마니안 데드리프트", "tier": "A", "score": 12, "cue": "햄스트링 당김이 강해지기 직전 깊이까지만 — 회차마다 조금씩 확장" },
+          { "id": "stiff-leg-dl", "name": "스티프레그 데드리프트", "tier": null, "score": null, "cue": "RDL 대체 변형" } ] } ] },
+        { "num": 2, "type": "ex", "rest": "1:30", "blocks": [ { "id": "b2", "muscle": "광배 — 수직 당김", "scheme": "3×8~12", "options": [
+          { "id": "lat-pulldown", "name": "랫풀다운", "tier": "S", "score": 14, "cue": "풀업이 가능해지면 첫 세트를 풀업으로 승격" },
+          { "id": "pullup", "name": "풀업", "tier": "B", "score": 9, "cue": "체중 부하 — 가능해질 때 승격용" },
+          { "id": "one-arm-lat-pulldown", "name": "원암 랫풀다운", "tier": "A", "score": 13, "cue": "편측 수행 — 시간 2배" },
+          { "id": "neutral-pullup", "name": "뉴트럴그립 풀업", "tier": "B", "score": 9, "cue": "중급 이상" } ] } ] },
+        { "num": 3, "type": "ex", "rest": "1:30", "blocks": [ { "id": "b3", "muscle": "상부등 — 수평 당김", "scheme": "3×8~12", "options": [
+          { "id": "cs-machine-row", "name": "체스트 서포티드 머신 로우", "tier": "S", "score": 14, "cue": "팔꿈치 넓게 = 상부등" },
+          { "id": "seated-cable-row", "name": "시티드 케이블 로우", "tier": "S", "score": 14, "cue": "머신 로우 부재 시" },
+          { "id": "cs-tbar-row", "name": "체스트 서포티드 티바로우", "tier": "A", "score": 13, "cue": "플레이트 로딩" },
+          { "id": "incline-db-row", "name": "인클라인 벤치 덤벨로우", "tier": null, "score": null, "cue": "머신이 없을 때 — 인클라인 벤치에 가슴 대고" },
+          { "id": "kelso-shrug", "name": "켈소 슈러그", "tier": "A", "score": 12, "cue": "등상부 고립(부분 동작)" },
+          { "id": "barbell-row", "name": "바벨로우", "tier": "C", "score": 7, "cue": "허리 부담·전신 피로 큼(채널 간 평가 상충)" } ] } ] },
+        { "num": 4, "type": "ss", "label": "S1", "rounds": 2, "rest": "1:00", "blocks": [
+          { "id": "b4a", "muscle": "후면어깨", "scheme": "2×12~15", "options": [
+            { "id": "cable-reverse-fly", "name": "케이블 리버스 플라이", "tier": "S", "score": 14, "cue": "언제든 페이스풀로 교체 가능" },
+            { "id": "facepull", "name": "페이스풀", "tier": "A", "score": 12, "cue": "팔꿈치 90도 유지(상부등+회전근개 다면 효과)" },
+            { "id": "reverse-pec-deck", "name": "리버스 펙덱", "tier": "S", "score": 14, "cue": "셋업 간편한 머신판" } ] },
+          { "id": "b4b", "muscle": "이두", "scheme": "2×8~12", "options": [
+            { "id": "preacher-curl", "name": "프리처 컬", "tier": "S", "score": 15, "cue": "팔 고정 — 신장 구간 부하" },
+            { "id": "incline-db-curl", "name": "인클라인 덤벨 컬", "tier": "A", "score": 12, "cue": "깊은 신장" },
+            { "id": "barbell-curl", "name": "바벨컬", "tier": "A", "score": 12, "cue": "하단 저항 소실" },
+            { "id": "bayesian-curl", "name": "케이블 베이지언 컬", "tier": "A", "score": 12, "cue": "신장 구간 저항 유지" },
+            { "id": "hammer-curl", "name": "해머컬", "tier": "A", "score": 12, "cue": "상완근 타겟 — 팔 두께 목적" } ] } ] },
+        { "num": 5, "type": "ss", "label": "S2", "rounds": 2, "rest": "1:00", "blocks": [
+          { "id": "b5a", "muscle": "햄스트링 — 컬·원심성", "scheme": "2×3~8", "options": [
+            { "id": "nordic-curl", "name": "노르딕컬(어시스트)", "tier": "B", "score": 9, "cue": "밴드/랫풀 패드 어시스트. 내려가는 구간만 통제해도 1회로 침" },
+            { "id": "seated-leg-curl", "name": "시티드 레그컬", "tier": "S", "score": 14, "cue": "근비대 목적이면 정당한 교체" } ] },
+          { "id": "b5b", "muscle": "코어 안정", "scheme": "2×8~12", "options": [
+            { "id": "ab-rollout", "name": "앱 롤아웃", "tier": "B", "score": 10, "cue": "무릎 대고, 허리 처짐 금지" },
+            { "id": "pallof-press", "name": "팔로프 프레스", "tier": "A", "score": 11, "cue": "밴드/케이블을 명치~배꼽 높이로, 어깨 너비로 서서 몸 밖으로 밀고 1~2초 정지(안티로테이션) — 좌우 각. 채널 처방은 한쪽 2세트 15회" },
+            { "id": "plank", "name": "플랭크", "tier": "B", "score": 10, "cue": "롤아웃 진입 전 단계" } ] } ] },
+        { "num": 6, "type": "ex", "rest": "1:00", "blocks": [ { "id": "b6", "muscle": "종아리", "scheme": "2×10~15", "options": [
+          { "id": "standing-calf-raise", "name": "스탠딩 카프레이즈", "tier": "S", "score": 15, "cue": "하단 1초 정지" } ] } ] },
+        { "num": 7, "type": "ex", "rest": "1:30", "blocks": [ { "id": "b7", "muscle": "전신 파워", "scheme": "2×15~20", "options": [
+          { "id": "kettlebell-swing", "name": "케틀벨 스윙", "tier": "B", "score": 9, "cue": "힙 힌지 스냅 — 팔로 들지 않기(사용자 지정 종목)" } ] } ] }
+      ]
+    }
+  },
+  "mobility": {
+    "totalSec": 480,
+    "place": "집 — 출발 전 수행. 준비물: 저항 밴드(집 상비). 정적 스트레칭은 세션 밖 별도. 센터 공간이 있는 날은 유산소 5분 뒤 수행해도 동일.",
+    "rows": [
+      { "t": "0:00–3:30", "sec": 210, "name": "이촌동 복압 운동(다이애거널 스트레칭)", "how": "선 자세, 발은 골반 너비. 한쪽 방향으로 ① 몸통 기울이기(반드시 먼저) → ② 몸통·골반 회전 → ③ 손을 뻗어 바닥(안 되면 정강이) 터치 → ④ 역순으로 올라오기. 동작 내내 가늘고 긴 호흡, 허리를 뒤로 젖히는 동작은 최소. 좌 105초(15~20회) → 우 105초. 반드시 한쪽씩(양측 동시 금지)" },
+      { "t": "3:30–5:00", "sec": 90, "name": "부장가아사나(동적)", "how": "엎드려 손 짚고 상체 올려 5초 유지(가늘고 긴 호흡) 후 복귀 ×8회. 허리 불편하면 전완 지지 저강도 단계" },
+      { "t": "5:00–6:00", "sec": 60, "name": "리버스 노르딕", "how": "하프닐링에서 상체 곧게 유지한 채 뒤로 기울였다 복귀 6~8회. 좌 30초 → 우 30초" },
+      { "t": "6:00–7:00", "sec": 60, "name": "박스 한발 스쿼트", "how": "의자·박스에 살짝 터치하고 일어서기, 무릎-발끝 정렬. 좌 30초(5~6회) → 우 30초" },
+      { "t": "7:00–8:00", "sec": 60, "name": "밴드 당기기", "how": "밴드를 얼굴 방향으로 고반복 당기기 25~30회, 견갑 움직임 크게" }
+    ]
+  },
+  "warmup": {
+    "totalSec": 300,
+    "rows": [
+      { "t": "0:00–4:00", "sec": 240, "name": "트레드밀 걷기", "how": "보통 속도(체온 상승 목적)" },
+      { "t": "4:00–5:00", "sec": 60, "name": "마지막 1분", "how": "빠르게" }
+    ]
+  },
+  "cardio": {
+    "totalSec": 840,
+    "rows": [
+      { "t": "0:00–14:00", "sec": 840, "name": "경사 빠른 걷기 또는 고정 자전거", "how": "숨은 차지만 짧은 문장 대화가 가능한 강도 유지" }
+    ],
+    "note": "순서 고정: 근력 먼저 → 유산소 나중. 진행: 4주마다 경사 또는 저항 1단계 상향."
+  }
+}
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("appdata").textContent);
+  var KEY = "wp4_v1";
+
+  // 저장소 계층 — 현재 localStorage(임시). 실사용 배포 시 이 load/save 두 지점만 Firebase로 교체하면 된다.
+  function load() {
+    try {
+      var s = JSON.parse(localStorage.getItem(KEY));
+      if (s && typeof s === "object") { s.sel = s.sel || {}; s.rec = s.rec || {}; s.ui = s.ui || {}; s.units = s.units || {}; s.daily = s.daily || {}; return s; }
+    } catch (e) {}
+    return { sel: {}, rec: {}, ui: {}, units: {}, daily: {} };
+  }
+  var store = load();
+  function save() {
+    store.ui.savedAt = Date.now();
+    localStorage.setItem(KEY, JSON.stringify(store));
+    schedulePush();
+  }
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  // 오늘 다시 열면 마지막 선택 유지, 날이 바뀌면 요일로 제안(월·목=A, 화·금=B)
+  var session;
+  (function () {
+    var td = todayStr();
+    if (store.ui.date === td && (store.ui.session === "A" || store.ui.session === "B")) { session = store.ui.session; return; }
+    var wd = new Date().getDay();
+    session = (wd === 2 || wd === 5) ? "B" : "A";
+  })();
+
+  function setSession(s) {
+    session = s;
+    store.ui.session = s;
+    store.ui.date = todayStr();
+    save();
+    render();
+  }
+  document.getElementById("tabA").addEventListener("click", function () { setSession("A"); });
+  document.getElementById("tabB").addEventListener("click", function () { setSession("B"); });
+
+  // 테마: 기본은 시스템 설정, 토글 시 명시 선택을 저장
+  var btnTheme = document.getElementById("btnTheme");
+  function systemDark() { return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches; }
+  function effectiveDark() { var t = store.ui.theme; return t ? t === "dark" : systemDark(); }
+  function applyTheme() {
+    var t = store.ui.theme;
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    else document.documentElement.removeAttribute("data-theme");
+    btnTheme.textContent = effectiveDark() ? "☀️" : "🌙";
+  }
+  btnTheme.addEventListener("click", function () {
+    store.ui.theme = effectiveDark() ? "light" : "dark";
+    save();
+    applyTheme();
+  });
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function entriesFor(key) { return store.rec[key] || []; }
+
+  function upsertToday(key, w, r, m, u) {
+    var td = todayStr();
+    var arr = store.rec[key] || (store.rec[key] = []);
+    var i, e = null;
+    for (i = 0; i < arr.length; i++) if (arr[i].d === td) { e = arr[i]; break; }
+    if (w === "" && r === "" && m === "") {
+      if (e) arr.splice(arr.indexOf(e), 1);
+      if (arr.length === 0) delete store.rec[key];
+    } else {
+      if (!e) { e = { d: td }; arr.push(e); }
+      e.w = w; e.r = r; e.m = m; e.u = u;
+    }
+    save();
+  }
+
+  function lastPrev(key) {
+    var td = todayStr();
+    var arr = entriesFor(key).filter(function (e) { return e.d < td; });
+    arr.sort(function (a, b) { return a.d < b.d ? 1 : -1; });
+    return arr[0] || null;
+  }
+  function todayEntry(key) {
+    var td = todayStr();
+    var arr = entriesFor(key);
+    for (var i = 0; i < arr.length; i++) if (arr[i].d === td) return arr[i];
+    return null;
+  }
+
+  function fmtEntry(e) {
+    var unit = e.u === "lb" ? "lb" : "kg";
+    var s = e.d.slice(5).replace("-", "/") + " · " + (e.w !== "" && e.w != null ? e.w + unit : "무게 미기록") + " × " + (e.r !== "" && e.r != null ? e.r + "회" : "횟수 미기록");
+    if (e.m) s += " · " + e.m;
+    return s;
+  }
+
+  function renderBlock(block, labelPrefix) {
+    var wrap = el("div", "ex");
+    wrap.appendChild(el("div", "muscle", labelPrefix + " · " + block.muscle));
+
+    var sel = document.createElement("select");
+    block.options.forEach(function (o) {
+      var op = document.createElement("option");
+      op.value = o.id; op.textContent = o.name;
+      sel.appendChild(op);
+    });
+    var curId = store.sel[block.id];
+    if (!block.options.some(function (o) { return o.id === curId; })) curId = block.options[0].id;
+    sel.value = curId;
+    wrap.appendChild(sel);
+
+    var cur = block.options.filter(function (o) { return o.id === curId; })[0];
+
+    var schemeText = block.scheme + (block.restText ? " · 휴식 " + block.restText : "");
+    wrap.appendChild(el("div", "scheme", schemeText));
+    if (block.ramp) wrap.appendChild(el("div", "ramp", "램프 = 본세트 무게의 약 50%×8회 → 75%×3회"));
+    wrap.appendChild(el("div", "tierline", cur.tier ? "티어 " + cur.tier + " · " + cur.score + "/15" : "티어 미채점"));
+    wrap.appendChild(el("div", "cue", cur.cue));
+
+    var key = block.id + "::" + curId;
+    var prev = lastPrev(key);
+    var lastDiv = el("div", "last" + (prev ? "" : " none"), prev ? "지난 기록: " + fmtEntry(prev) : "지난 기록 없음");
+    wrap.appendChild(lastDiv);
+
+    var te = todayEntry(key);
+    var unit = store.units[key] === "lb" ? "lb" : "kg";
+    var inrow = el("div", "inrow");
+    var dW = el("div");
+    var wlab = el("div", "wlabrow");
+    wlab.appendChild(el("label", null, "무게"));
+    var units = el("span", "units");
+    var ubtns = {};
+    ["kg", "lb"].forEach(function (u) {
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = u;
+      if (u === unit) b.className = "on";
+      b.addEventListener("click", function () {
+        if (unit === u) return;
+        unit = u;
+        store.units[key] = u;
+        var e2 = todayEntry(key);
+        if (e2) e2.u = u;
+        save();
+        Object.keys(ubtns).forEach(function (k) { ubtns[k].className = k === u ? "on" : ""; });
+      });
+      ubtns[u] = b;
+      units.appendChild(b);
+    });
+    wlab.appendChild(units);
+    dW.appendChild(wlab);
+    var inW = document.createElement("input"); inW.type = "number"; inW.step = "0.5"; inW.inputMode = "decimal";
+    inW.value = te && te.w != null ? te.w : "";
+    dW.appendChild(inW); inrow.appendChild(dW);
+    var dR = el("div"); dR.appendChild(el("label", null, "횟수(마지막 세트)"));
+    var inR = document.createElement("input"); inR.type = "number"; inR.step = "1"; inR.inputMode = "numeric";
+    inR.value = te && te.r != null ? te.r : "";
+    dR.appendChild(inR); inrow.appendChild(dR);
+    wrap.appendChild(inrow);
+
+    var dM = el("div", "memo"); dM.appendChild(el("label", "memolab", "메모"));
+    var inM = document.createElement("input"); inM.type = "text";
+    inM.value = te && te.m ? te.m : "";
+    dM.appendChild(inM); wrap.appendChild(dM);
+
+    var hint = el("div", "savedhint", "");
+    wrap.appendChild(hint);
+
+    function onInput() {
+      upsertToday(key, inW.value.trim(), inR.value.trim(), inM.value.trim(), unit);
+      var d = new Date();
+      hint.textContent = "저장됨 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+      renderScore();
+    }
+    inW.addEventListener("input", onInput);
+    inR.addEventListener("input", onInput);
+    inM.addEventListener("input", onInput);
+
+    sel.addEventListener("change", function () {
+      store.sel[block.id] = sel.value;
+      save();
+      render();
+    });
+
+    return wrap;
+  }
+
+  function renderStrength() {
+    var box = document.getElementById("strength");
+    box.textContent = "";
+    var S = DATA.sessions[session];
+    S.slots.forEach(function (slot) {
+      var card = el("div", "card");
+      if (slot.type === "ss") {
+        card.appendChild(el("div", "sshead", slot.num + " · 슈퍼세트 " + slot.label + " — " + slot.rounds + "라운드, 라운드 간 휴식 " + slot.rest));
+        card.appendChild(el("div", "ssnote", "두 종목을 쉬지 않고 1세트씩 이어서 하면 1라운드. 라운드 사이에만 휴식(세트 수 동일 종목끼리만 묶음)."));
+        slot.blocks.forEach(function (b, i) {
+          b.restText = null;
+          card.appendChild(renderBlock(b, slot.label + "-" + (i === 0 ? "a" : "b")));
+        });
+      } else {
+        var b = slot.blocks[0];
+        b.restText = slot.rest;
+        card.appendChild(renderBlock(b, String(slot.num)));
+      }
+      box.appendChild(card);
+    });
+  }
+
+  function renderScriptTable(id, rows) {
+    var t = document.getElementById(id);
+    t.textContent = "";
+    rows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      var td1 = el("td", "t", r.t);
+      var td2 = document.createElement("td");
+      var nm = el("span", "nm", r.name + " (" + r.sec + "초)");
+      td2.appendChild(nm);
+      td2.appendChild(document.createTextNode(r.how));
+      tr.appendChild(td1); tr.appendChild(td2);
+      t.appendChild(tr);
+    });
+  }
+
+  function toKg(w, u) {
+    var x = parseFloat(w);
+    if (!isFinite(x)) return null;
+    return u === "lb" ? x * 0.45359237 : x;
+  }
+
+  // 운동 점수 [설계 판단]: 그날 기록한 각 종목의 무게(kg 환산)×횟수(마지막 세트)의 합
+  function scoreByDate() {
+    var byDate = {};
+    Object.keys(store.rec).forEach(function (key) {
+      var sess = key.charAt(0) === "b" ? "B" : "A";
+      (store.rec[key] || []).forEach(function (e) {
+        var kg = toKg(e.w, e.u);
+        var r = parseFloat(e.r);
+        if (kg == null || !isFinite(r) || r <= 0) return;
+        if (!byDate[e.d]) byDate[e.d] = { A: 0, B: 0 };
+        byDate[e.d][sess] += kg * r;
+      });
+    });
+    return byDate;
+  }
+  function scoreSeries(limit) {
+    var byDate = scoreByDate();
+    var dates = Object.keys(byDate).sort();
+    if (limit && dates.length > limit) dates = dates.slice(-limit);
+    var A = [], B = [];
+    dates.forEach(function (d) {
+      if (byDate[d].A > 0) A.push({ d: d, v: Math.round(byDate[d].A) });
+      if (byDate[d].B > 0) B.push({ d: d, v: Math.round(byDate[d].B) });
+    });
+    return { dates: dates, series: [
+      { name: "A", color: "var(--accent)", points: A },
+      { name: "B", color: "#10b981", points: B } ] };
+  }
+
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function svgEl(tag, attrs) {
+    var e = document.createElementNS(SVGNS, tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    return e;
+  }
+  function mmdd(d) { return d.slice(5).replace("-", "/"); }
+
+  // 미니 라인차트 — 외부 라이브러리 없이 SVG
+  function lineChart(dates, series, fmt) {
+    var pts = [];
+    series.forEach(function (s) { pts = pts.concat(s.points); });
+    if (!dates.length || !pts.length) return el("div", "chart-empty", "기록이 쌓이면 표시됩니다");
+    var W = 340, H = 140, L = 40, R = 10, T = 10, Bm = 20;
+    var rawMin = Infinity, rawMax = -Infinity;
+    pts.forEach(function (p) { rawMin = Math.min(rawMin, p.v); rawMax = Math.max(rawMax, p.v); });
+    var vmin = rawMin, vmax = rawMax;
+    if (vmin === vmax) { vmin -= 1; vmax += 1; }
+    var pad = (vmax - vmin) * 0.1;
+    vmin -= pad; vmax += pad;
+    var xi = {};
+    dates.forEach(function (d, i) { xi[d] = i; });
+    var n = Math.max(dates.length - 1, 1);
+    function X(d) { return L + (W - L - R) * (xi[d] || 0) / n; }
+    function Y(v) { return T + (H - T - Bm) * (1 - (v - vmin) / (vmax - vmin)); }
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H });
+    svg.appendChild(svgEl("line", { x1: L, y1: H - Bm, x2: W - R, y2: H - Bm, stroke: "var(--rowline)", "stroke-width": 1 }));
+    function label(x, y, text, anchor) {
+      var t = svgEl("text", { x: x, y: y, "font-size": 9, fill: "var(--hint)", "text-anchor": anchor || "start" });
+      t.textContent = text;
+      svg.appendChild(t);
+    }
+    label(L - 4, Y(rawMax) + 3, fmt(rawMax), "end");
+    if (rawMin !== rawMax) label(L - 4, Y(rawMin) + 3, fmt(rawMin), "end");
+    label(L, H - 6, mmdd(dates[0]));
+    if (dates.length > 1) label(W - R, H - 6, mmdd(dates[dates.length - 1]), "end");
+    series.forEach(function (s) {
+      if (!s.points.length) return;
+      if (s.points.length > 1) {
+        var dstr = s.points.map(function (p) { return X(p.d) + "," + Y(p.v); }).join(" ");
+        svg.appendChild(svgEl("polyline", { points: dstr, fill: "none", stroke: s.color, "stroke-width": 2 }));
+      }
+      s.points.forEach(function (p) {
+        var c = svgEl("circle", { cx: X(p.d), cy: Y(p.v), r: 3, fill: s.color });
+        var ti = svgEl("title");
+        ti.textContent = mmdd(p.d) + " · " + fmt(p.v) + (s.name ? " (" + s.name + ")" : "");
+        c.appendChild(ti);
+        svg.appendChild(c);
+      });
+    });
+    var wrap = el("div", "chartwrap");
+    wrap.appendChild(svg);
+    return wrap;
+  }
+
+  function scoreLegend() {
+    var lg = el("div", "legend");
+    [["A 세션", "var(--accent)"], ["B 세션", "#10b981"]].forEach(function (x) {
+      var s = el("span");
+      var sw = el("span", "sw");
+      sw.style.background = x[1];
+      s.appendChild(sw);
+      s.appendChild(document.createTextNode(x[0]));
+      lg.appendChild(s);
+    });
+    return lg;
+  }
+
+  function renderScore() {
+    var box = document.getElementById("scoreCard");
+    box.textContent = "";
+    box.appendChild(el("div", "chart-title", "운동 점수 진행"));
+    box.appendChild(scoreLegend());
+    var sc = scoreSeries(12);
+    box.appendChild(lineChart(sc.dates, sc.series, function (v) { return String(v); }));
+    box.appendChild(el("div", "chart-note", "점수 = 그날 기록한 각 종목의 무게(kg 환산)×횟수(마지막 세트) 합 · 최근 12회 · 무게 없는 맨몸 기록은 제외"));
+  }
+
+  function renderDaily() {
+    var box = document.getElementById("dailyCard");
+    box.textContent = "";
+    var td = todayStr();
+    var cur = store.daily[td] || {};
+    var prevD = Object.keys(store.daily).filter(function (d) { return d < td; }).sort().pop();
+    if (prevD) {
+      var p = store.daily[prevD];
+      var parts = [];
+      if (p.bw) parts.push(p.bw + "kg");
+      if (p.sl) parts.push("수면 " + p.sl + "h");
+      box.appendChild(el("div", "last", "지난 기록: " + mmdd(prevD) + " · " + parts.join(" · ")));
+    } else {
+      box.appendChild(el("div", "last none", "지난 기록 없음"));
+    }
+    var inrow = el("div", "inrow");
+    var dB = el("div"); dB.appendChild(el("label", null, "체중(kg)"));
+    var inB = document.createElement("input"); inB.type = "number"; inB.step = "0.1"; inB.inputMode = "decimal";
+    inB.value = cur.bw || "";
+    dB.appendChild(inB); inrow.appendChild(dB);
+    var dS = el("div"); dS.appendChild(el("label", null, "수면시간(h)"));
+    var inS = document.createElement("input"); inS.type = "number"; inS.step = "0.1"; inS.inputMode = "decimal";
+    inS.value = cur.sl || "";
+    dS.appendChild(inS); inrow.appendChild(dS);
+    box.appendChild(inrow);
+    var hint = el("div", "savedhint", "");
+    box.appendChild(hint);
+    function onInput() {
+      var bw = inB.value.trim(), sl = inS.value.trim();
+      if (bw === "" && sl === "") delete store.daily[td];
+      else store.daily[td] = { bw: bw, sl: sl };
+      save();
+      var d = new Date();
+      hint.textContent = "저장됨 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+    inB.addEventListener("input", onInput);
+    inS.addEventListener("input", onInput);
+  }
+
+  function dailySeries(field) {
+    var pts = [];
+    Object.keys(store.daily).sort().forEach(function (d) {
+      var v = parseFloat(store.daily[d][field]);
+      if (isFinite(v)) pts.push({ d: d, v: v });
+    });
+    return { dates: pts.map(function (p) { return p.d; }), points: pts };
+  }
+  function fmt1(v) { return String(Math.round(v * 10) / 10); }
+
+  // 종목 id → 이름·세션 내 순서 (세부 기록 표시용)
+  var EXIDX = {};
+  (function () {
+    ["A", "B"].forEach(function (sess) {
+      DATA.sessions[sess].slots.forEach(function (slot, si) {
+        slot.blocks.forEach(function (b, bi) {
+          b.options.forEach(function (o) {
+            EXIDX[o.id] = { name: o.name, order: si * 10 + bi };
+          });
+        });
+      });
+    });
+  })();
+
+  function dateLabel(d) {
+    var p = d.split("-");
+    var dt = new Date(+p[0], +p[1] - 1, +p[2]);
+    var wd = ["일", "월", "화", "수", "목", "금", "토"][dt.getDay()];
+    var prefix = +p[0] === new Date().getFullYear() ? "" : p[0] + ". ";
+    return prefix + p[1] + "/" + p[2] + " (" + wd + ")";
+  }
+
+  function renderDayList() {
+    var box = document.getElementById("dayList");
+    box.textContent = "";
+    var byDate = {};
+    Object.keys(store.rec).forEach(function (key) {
+      var slotId = key.split("::")[0];
+      var exId = key.split("::")[1];
+      var sess = slotId.charAt(0) === "b" ? "B" : "A";
+      var meta = EXIDX[exId] || { name: exId, order: 99 };
+      (store.rec[key] || []).forEach(function (e) {
+        if (!byDate[e.d]) byDate[e.d] = { score: 0, hasA: false, hasB: false, items: [] };
+        var v = byDate[e.d];
+        if (sess === "B") v.hasB = true; else v.hasA = true;
+        var kg = toKg(e.w, e.u);
+        var r = parseFloat(e.r);
+        if (kg != null && isFinite(r) && r > 0) v.score += kg * r;
+        v.items.push({ order: meta.order, name: meta.name,
+          w: e.w || "", u: e.u === "lb" ? "lb" : "kg", r: e.r || "", m: e.m || "" });
+      });
+    });
+    var dates = Object.keys(byDate).sort().reverse();
+    if (!dates.length) {
+      box.appendChild(el("div", "card chart-empty", "운동 기록이 쌓이면 표시됩니다"));
+      return;
+    }
+    dates.forEach(function (d) {
+      var v = byDate[d];
+      var card = el("div", "card datecard");
+      var face = document.createElement("button");
+      face.type = "button";
+      face.className = "dc-face";
+      face.appendChild(el("span", "dc-date", dateLabel(d)));
+      var sessTxt = v.hasA && v.hasB ? "A·B" : (v.hasB ? "B" : "A");
+      face.appendChild(el("span", "dc-badge badge-" + (v.hasA && v.hasB ? "AB" : sessTxt), sessTxt));
+      face.appendChild(el("span", "dc-score", Math.round(v.score) + "점"));
+      var caret = el("span", "dc-caret", "▼");
+      face.appendChild(caret);
+      card.appendChild(face);
+      var body = el("div", "dc-body");
+      v.items.sort(function (a, b) { return a.order - b.order; });
+      v.items.forEach(function (it) {
+        var row = el("div", "dc-item");
+        row.appendChild(el("span", "nm", it.name));
+        var val = (it.w !== "" ? it.w + it.u : "—") + " × " + (it.r !== "" ? it.r + "회" : "—");
+        row.appendChild(el("span", "val", val));
+        body.appendChild(row);
+        if (it.m) body.appendChild(el("div", "dc-memo", "메모: " + it.m));
+      });
+      card.appendChild(body);
+      face.addEventListener("click", function () {
+        card.classList.toggle("open");
+        caret.textContent = card.classList.contains("open") ? "▲" : "▼";
+      });
+      box.appendChild(card);
+    });
+  }
+
+  function renderRecords() {
+    var bw = dailySeries("bw");
+    var box = document.getElementById("chartBw");
+    box.textContent = "";
+    box.appendChild(lineChart(bw.dates, [{ name: "", color: "var(--accent)", points: bw.points }], fmt1));
+    var sl = dailySeries("sl");
+    box = document.getElementById("chartSleep");
+    box.textContent = "";
+    box.appendChild(lineChart(sl.dates, [{ name: "", color: "#10b981", points: sl.points }], fmt1));
+    var sc = scoreSeries(0);
+    box = document.getElementById("chartScore");
+    box.textContent = "";
+    box.appendChild(scoreLegend());
+    box.appendChild(lineChart(sc.dates, sc.series, function (v) { return String(v); }));
+    renderDayList();
+  }
+  var recordsView = document.getElementById("recordsView");
+  document.getElementById("btnRecords").addEventListener("click", function () {
+    renderRecords();
+    recordsView.hidden = false;
+    document.body.style.overflow = "hidden";
+  });
+  document.getElementById("btnBack").addEventListener("click", function () {
+    recordsView.hidden = true;
+    document.body.style.overflow = "";
+  });
+
+  function render() {
+    document.getElementById("tabA").className = session === "A" ? "on" : "";
+    document.getElementById("tabB").className = session === "B" ? "on" : "";
+    var S = DATA.sessions[session];
+    var ob = document.getElementById("orderBox");
+    ob.textContent = "";
+    ob.appendChild(el("div", null, "오늘: " + session + " 세션 (" + S.days + ") — " + S.label));
+    var line = el("div");
+    line.innerHTML = "<b>① 집 모빌리티 8:00</b> → 헬스장: <b>② 유산소 워밍업 5:00</b> → <b>③ 근력 " + S.strength + "</b> → <b>④ 유산소 본절 14:00</b>";
+    ob.appendChild(line);
+    ob.appendChild(el("div", null, "헬스장 체류 " + S.gym + " · 집 포함 총 " + S.total));
+    document.getElementById("strengthHead").textContent = "③ 근력 — " + session + " 세션 (" + S.days + ")";
+    renderStrength();
+    renderScore();
+  }
+
+  document.getElementById("mobNote").textContent = DATA.mobility.place;
+  renderScriptTable("mobTable", DATA.mobility.rows);
+  renderScriptTable("warmupTable", DATA.warmup.rows);
+  renderScriptTable("cardioTable", DATA.cardio.rows);
+  document.getElementById("cardioNote").textContent = DATA.cardio.note;
+
+  document.getElementById("btnExport").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(store, null, 1)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "운동기록_" + todayStr() + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  });
+  document.getElementById("btnImport").addEventListener("click", function () {
+    document.getElementById("fileImport").click();
+  });
+  document.getElementById("fileImport").addEventListener("change", function (ev) {
+    var f = ev.target.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var s = JSON.parse(reader.result);
+        if (!s || typeof s !== "object" || typeof s.rec !== "object") { alert("형식이 올바르지 않습니다."); return; }
+        if (!confirm("현재 기록 전체를 파일 내용으로 교체합니다. 진행할까요?")) return;
+        store = { sel: s.sel || {}, rec: s.rec || {}, ui: s.ui || {}, units: s.units || {}, daily: s.daily || {} };
+        save();
+        applyTheme();
+        renderDaily();
+        render();
+        alert("불러오기 완료");
+      } catch (e) { alert("JSON 파일을 읽을 수 없습니다."); }
+      ev.target.value = "";
+    };
+    reader.readAsText(f);
+  });
+
+  // ===== 클라우드 동기화 (Firebase) =====
+  // firebase-setup.md 절차로 프로젝트를 만든 뒤, 아래 null을 콘솔에서 복사한 firebaseConfig 객체로
+  // 교체하면 Google 로그인 + Firestore 동기화가 활성화된다. null이면 이 기기(localStorage)에만 저장하며
+  // 외부 네트워크 요청도 전혀 하지 않는다.
+  var FIREBASE_CONFIG = null;
+
+  var cloud = { user: null, auth: null, db: null, mods: null, timer: null };
+  function cloudStatus(msg) {
+    var e = document.getElementById("syncStatus");
+    if (e) e.textContent = msg;
+  }
+  function nowHM() {
+    var d = new Date();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+  function schedulePush() {
+    if (!cloud.user) return;
+    clearTimeout(cloud.timer);
+    cloud.timer = setTimeout(pushCloud, 1500);
+  }
+  function pushCloud() {
+    if (!cloud.user) return;
+    var m = cloud.mods;
+    return m.fs.setDoc(m.fs.doc(cloud.db, "users", cloud.user.uid), {
+      payload: JSON.stringify(store),
+      savedAt: store.ui.savedAt || 0,
+      email: cloud.user.email || ""
+    }).then(function () {
+      cloudStatus(cloud.user.email + " · 동기화됨 " + nowHM());
+    }).catch(function (e) {
+      cloudStatus("동기화 실패(로컬에는 저장됨): " + (e.code || e.message));
+    });
+  }
+  function pullCloud() {
+    var m = cloud.mods;
+    return m.fs.getDoc(m.fs.doc(cloud.db, "users", cloud.user.uid)).then(function (snap) {
+      if (!snap.exists()) return;
+      var remote = snap.data();
+      if ((remote.savedAt || 0) > (store.ui.savedAt || 0)) {
+        var s = JSON.parse(remote.payload);
+        store = { sel: s.sel || {}, rec: s.rec || {}, ui: s.ui || {}, units: s.units || {}, daily: s.daily || {} };
+        localStorage.setItem(KEY, JSON.stringify(store));
+        applyTheme();
+        renderDaily();
+        render();
+        cloudStatus(cloud.user.email + " · 원격 기록 불러옴 " + nowHM());
+      }
+    });
+  }
+  function initCloud() {
+    if (!FIREBASE_CONFIG) return;
+    document.getElementById("syncRow").hidden = false;
+    var btn = document.getElementById("btnSync");
+    cloudStatus("클라우드 연결 중…");
+    Promise.all([
+      import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
+    ]).then(function (mods) {
+      var appM = mods[0], authM = mods[1], fsM = mods[2];
+      var app = appM.initializeApp(FIREBASE_CONFIG);
+      cloud.auth = authM.getAuth(app);
+      cloud.db = fsM.getFirestore(app);
+      cloud.mods = { auth: authM, fs: fsM };
+      authM.onAuthStateChanged(cloud.auth, function (user) {
+        cloud.user = user;
+        if (user) {
+          btn.textContent = "로그아웃";
+          cloudStatus(user.email + " · 동기화 확인 중…");
+          pullCloud().then(pushCloud).catch(function (e) {
+            cloudStatus("동기화 실패: " + (e.code || e.message));
+          });
+        } else {
+          btn.textContent = "Google 로그인";
+          cloudStatus("미로그인 — 이 기기에만 저장 중");
+        }
+      });
+      authM.getRedirectResult(cloud.auth).catch(function () {});
+      btn.addEventListener("click", function () {
+        if (cloud.user) { cloud.mods.auth.signOut(cloud.auth); return; }
+        var provider = new authM.GoogleAuthProvider();
+        authM.signInWithPopup(cloud.auth, provider).catch(function () {
+          authM.signInWithRedirect(cloud.auth, provider).catch(function (e2) {
+            cloudStatus("로그인 실패: " + (e2.code || e2.message));
+          });
+        });
+      });
+    }).catch(function () {
+      cloudStatus("클라우드 연결 실패 — 이 기기에만 저장 중");
+    });
+  }
+
+  applyTheme();
+  renderDaily();
+  render();
+  initCloud();
+})();
+</script>
+</body>
+</html>
