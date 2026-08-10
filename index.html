@@ -120,6 +120,16 @@
   .info-txt { font-size: 13.5px; line-height: 1.6; }
   .ytwrap { margin-top: 8px; display: flex; justify-content: center; }
   .ytwrap iframe { width: min(300px, 100%); aspect-ratio: 9 / 16; border: 0; border-radius: 10px; }
+  .prog { flex: none; font-size: 15px; font-weight: 700; line-height: 1; }
+  .prog.up { color: #10b981; }
+  .prog.down { color: #ef4444; }
+  .setrow { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; margin: 8px 0 2px; }
+  .setbox { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; color: var(--muted); }
+  .setbox input { width: 24px; height: 24px; margin: 0; accent-color: var(--accent); }
+  .setbox.rampbox { color: var(--hint); }
+  .setbox.rampbox input { accent-color: var(--hint); }
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 18px; border-radius: 20px; font-size: 13.5px; font-weight: 700; z-index: 90; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.show { opacity: 0.93; }
 </style>
 </head>
 <body>
@@ -164,6 +174,7 @@
     <li>증량 후 반복이 범위 <b>하한 밑</b>으로 떨어지면 잘못된 증량 — 직전 무게로 복귀.</li>
     <li>같은 종목이 <b>3세션 연속</b> 반복수 증가 없음 → 무게 10% 줄이고 다시 올라가기.</li>
     <li>기록 요령: 무게와 <b>마지막 세트의 반복수</b>를 적는다(증량 판단 기준이 되는 세트). 마지막 세트에서 이전보다 실패지점에 빨리 도달했다면 메모에 남긴다.</li>
+    <li>앱 자동 판정: 위 규칙에 부합하면 종목 카드에 <b style="color:#10b981">▲</b>(증량)/<b style="color:#ef4444">▼</b>(감량·복귀) 화살표가 표시된다 — 근거는 ⓘ 팝업의 "진행 판정" 참조. 판정은 마지막 세트 기록 기준의 기계 판정이며 폼 상태는 본인이 판단.</li>
     <li>휴식시간은 <b>6주 고정</b> — 컨디션이 좋아도 줄이지 않는다.</li>
     <li>슈퍼세트: 두 종목을 쉬지 않고 1세트씩 이어서 하면 1라운드, <b>라운드 사이에만</b> 휴식.</li>
     <li>1주 이내 공백은 보충 없이 그냥 이어서 진행.</li>
@@ -206,6 +217,8 @@
     <div id="dayList"></div>
   </div>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <div class="modal" id="infoModal" hidden>
   <div class="modalbox">
@@ -251,7 +264,7 @@
                   "tier": "S",
                   "score": 14,
                   "cue": "허리 부담 없음. 발 위치로 타겟 조절 — 부담 시 상시 대체 가능",
-                  "why": "rapid 조건부 긍정 — 허리 부담 없이 쿼드에 고부하를 줄 수 있고 발 위치로 타겟 조절. 티어 S(14) — 스쿼트보다 효율 채점 상위.",
+                  "why": "rapid 조건부 긍정 — 허리 부담 없이 대퇴사두에 고부하를 줄 수 있고 발 위치로 타겟 조절. 티어 S(14) — 스쿼트보다 효율 채점 상위.",
                   "warn": "머신 공통 규칙: 마지막 세트만 실패 근접 허용. 무릎 불편감이 느껴지면 즉시 중지.",
                   "yt": "xw2yT7Gwt7Q"
                 },
@@ -507,30 +520,6 @@
         {
           "num": 6,
           "type": "ex",
-          "rest": "1:30",
-          "blocks": [
-            {
-              "id": "a6",
-              "muscle": "쿼드·둔근",
-              "scheme": "2×8~12 (좌우 각)",
-              "options": [
-                {
-                  "id": "bss",
-                  "name": "불가리안 스플릿 스쿼트",
-                  "tier": "B",
-                  "score": 10,
-                  "cue": "덤벨 들고, 앞무릎-발끝 정렬. 좌우 각 2세트(사용자 선호 편성)",
-                  "why": "awesome \"하체 운동의 끝판왕\" 마무리 강추천 + ★사용자 선호 편성.",
-                  "warn": "밸런스 난이도 높음 — 앞무릎-발끝 정렬 유지, 좌우 각 2세트. 덤벨 들고 수행.",
-                  "yt": "j9zlYSJNmzQ"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "num": 7,
-          "type": "ex",
           "rest": "1:15",
           "blocks": [
             {
@@ -557,6 +546,30 @@
                   "why": "rapid가 다양성 목적으로 병행 권고한 덤벨판 — 혼잡 시 대안.",
                   "warn": "반동 금지(awesome). 하단 무저항 구간이 있는 프로파일임을 유의.",
                   "yt": "1HhMAvo9zTg"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "num": 7,
+          "type": "ex",
+          "rest": "1:30",
+          "blocks": [
+            {
+              "id": "a6",
+              "muscle": "대퇴사두·둔근",
+              "scheme": "2×8~12 (좌우 각)",
+              "options": [
+                {
+                  "id": "bss",
+                  "name": "불가리안 스플릿 스쿼트",
+                  "tier": "B",
+                  "score": 10,
+                  "cue": "덤벨 들고, 앞무릎-발끝 정렬. 좌우 각 2세트(사용자 선호 편성)",
+                  "why": "awesome \"하체 운동의 끝판왕\" 마무리 강추천 + ★사용자 선호 편성.",
+                  "warn": "밸런스 난이도 높음 — 앞무릎-발끝 정렬 유지, 좌우 각 2세트. 덤벨 들고 수행.",
+                  "yt": "j9zlYSJNmzQ"
                 }
               ]
             }
@@ -589,7 +602,7 @@
                   "score": 12,
                   "cue": "햄스트링 당김이 강해지기 직전 깊이까지만 — 회차마다 조금씩 확장",
                   "why": "rapid — 햄스트링을 가장 많이 신장시키고 하단에서 최대 부하가 걸리는 힌지. 힌지 축 대표 종목.",
-                  "warn": "햄 당김이 강해지기 직전 깊이까지만 — 회차마다 조금씩 확장(§7.5). 폼 무너지기 전 종료, 실패 금지.",
+                  "warn": "햄스트링 당김이 강해지기 직전 깊이까지만 — 회차마다 조금씩 확장(§7.5). 폼 무너지기 전 종료, 실패 금지.",
                   "yt": "XBjaHAVmCL8"
                 },
                 {
@@ -598,7 +611,7 @@
                   "tier": null,
                   "score": null,
                   "cue": "RDL 대체 변형",
-                  "why": "RDL 대체 변형(P1 (b) 참고) — 더 편 무릎으로 햄 신장 강조.",
+                  "why": "RDL 대체 변형(P1 (b) 참고) — 더 편 무릎으로 햄스트링 신장 강조.",
                   "warn": "RDL과 동일 — 당김 관리·폼 기준 종료.",
                   "yt": "_EgAxz0LKbc"
                 }
@@ -856,7 +869,7 @@
                   "score": 9,
                   "cue": "밴드/랫풀 패드 어시스트. 내려가는 구간만 통제해도 1회로 침",
                   "why": "ichon 명시 처방(전굴·다리찢기 목적의 원심성수축 근력) + awesome 리뷰논문 인용(노르딕>레그컬). 목적 가중 편성 — 효율 채점은 레그컬이 상위.",
-                  "warn": "어시스트 필수(밴드/랫풀 패드) — 내려가는 구간 통제만으로 1회. 햄 당김 관리(§7.5). ※영상은 시연(성공 사례) — how-to 쇼츠 부재.",
+                  "warn": "어시스트 필수(밴드/랫풀 패드) — 내려가는 구간 통제만으로 1회. 햄스트링 당김 관리(§7.5). ※영상은 시연(성공 사례) — how-to 쇼츠 부재.",
                   "yt": "Dr5RuMfSt3Q"
                 },
                 {
@@ -865,7 +878,7 @@
                   "tier": "S",
                   "score": 14,
                   "cue": "근비대 목적이면 정당한 교체",
-                  "why": "rapid 조건부(햄 단두를 유일하게 자극) — 효율 채점 S(14). 근비대 목적이면 정당한 교체.",
+                  "why": "rapid 조건부(햄스트링 단두를 유일하게 자극) — 효율 채점 S(14). 근비대 목적이면 정당한 교체.",
                   "warn": "머신 공통: 마지막 세트만 실패 근접 허용.",
                   "yt": "STDP7QBe-Ys"
                 }
@@ -1099,19 +1112,62 @@
 
   function entriesFor(key) { return store.rec[key] || []; }
 
-  function upsertToday(key, w, r, m, u) {
+  function upsertToday(key, w, r, m, u, c) {
     var td = todayStr();
     var arr = store.rec[key] || (store.rec[key] = []);
     var i, e = null;
     for (i = 0; i < arr.length; i++) if (arr[i].d === td) { e = arr[i]; break; }
-    if (w === "" && r === "" && m === "") {
+    var anyCheck = c && c.some(function (x) { return x; });
+    if (w === "" && r === "" && m === "" && !anyCheck) {
       if (e) arr.splice(arr.indexOf(e), 1);
       if (arr.length === 0) delete store.rec[key];
     } else {
       if (!e) { e = { d: td }; arr.push(e); }
       e.w = w; e.r = r; e.m = m; e.u = u;
+      if (c) e.c = c;
     }
     save();
+  }
+
+  // 세트×반복 문자열 파싱: "램프 2 + 3×5~8" → {ramp:2, sets:3, min:5, max:8}
+  function parseScheme(s) {
+    var rm = s.match(/램프 (\d+)/);
+    var sm = s.match(/(\d+)×(\d+)~(\d+)/);
+    return { ramp: rm ? +rm[1] : 0, sets: sm ? +sm[1] : 0, min: sm ? +sm[2] : null, max: sm ? +sm[3] : null };
+  }
+
+  // 진행 규칙(§7.1·7.3) 기계 판정 — 마지막 세트 기록 기준
+  function suggestFor(key, block) {
+    var ps = parseScheme(block.scheme);
+    if (ps.max == null) return null;
+    var arr = entriesFor(key).slice().sort(function (a, b) { return a.d < b.d ? 1 : -1; });
+    var e0 = arr[0], e1 = arr[1], e2 = arr[2];
+    if (!e0) return null;
+    var r0 = parseFloat(e0.r);
+    if (isFinite(r0) && r0 >= ps.max)
+      return { dir: "up", txt: "증량 조건 충족: 지난 기록 " + r0 + "회 ≥ 상한 " + ps.max + "회 → 이번 세션 증량(바벨 +2.5kg·스쿼트/RDL +2.5~5kg·덤벨 다음 단위·머신 1칸)" };
+    if (e1) {
+      var w0 = toKg(e0.w, e0.u), w1 = toKg(e1.w, e1.u), r1 = parseFloat(e1.r);
+      if (w0 != null && w1 != null && w0 > w1 && isFinite(r0) && r0 < ps.min)
+        return { dir: "down", txt: "증량 후 반복(" + r0 + "회)이 하한 " + ps.min + "회 미만 → 직전 무게(" + e1.w + (e1.u === "lb" ? "lb" : "kg") + ")로 복귀" };
+      if (e2) {
+        var w2 = toKg(e2.w, e2.u), r2 = parseFloat(e2.r);
+        if (w0 != null && w1 != null && w2 != null && w0 === w1 && w1 === w2 &&
+            isFinite(r0) && isFinite(r1) && isFinite(r2) && r0 <= r1 && r1 <= r2)
+          return { dir: "down", txt: "같은 무게 3세션 연속 반복 증가 없음 → 무게 10% 감량 후 다시 올라가기" };
+      }
+    }
+    return null;
+  }
+
+  // 저장 토스트
+  var toastTimer = null;
+  function showToast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.className = "toast"; }, 1400);
   }
 
   function lastPrev(key) {
@@ -1150,28 +1206,56 @@
     wrap.appendChild(sel);
 
     var cur = block.options.filter(function (o) { return o.id === curId; })[0];
+    var key = block.id + "::" + curId;
 
     var schemeText = block.scheme + (block.restText ? " · 휴식 " + block.restText : "");
     var schemeRow = el("div", "schemerow");
     schemeRow.appendChild(el("div", "scheme", schemeText));
+    var sug = suggestFor(key, block);
+    if (sug) {
+      var ar = el("span", "prog " + sug.dir, sug.dir === "up" ? "▲" : "▼");
+      ar.title = sug.txt;
+      schemeRow.appendChild(ar);
+    }
     var ib = document.createElement("button");
     ib.type = "button";
     ib.className = "infobtn";
     ib.textContent = "i";
     ib.setAttribute("aria-label", cur.name + " 정보");
-    ib.addEventListener("click", function () { openInfo(cur); });
+    ib.addEventListener("click", function () { openInfo(cur, key, block); });
     schemeRow.appendChild(ib);
     wrap.appendChild(schemeRow);
     if (block.ramp) wrap.appendChild(el("div", "ramp", "램프 = 본세트 무게의 약 50%×8회 → 75%×3회"));
+
+    // 세트 체크박스 (램프 포함)
+    var ps = parseScheme(block.scheme);
+    var teC = todayEntry(key);
+    var setrow = el("div", "setrow");
+    var boxes = [];
+    function addBox(lbl, isRamp) {
+      var box = el("label", "setbox" + (isRamp ? " rampbox" : ""));
+      var chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.checked = !!(teC && teC.c && teC.c[boxes.length]);
+      chk.addEventListener("change", function () { onInput(); });
+      box.appendChild(chk);
+      box.appendChild(el("span", null, lbl));
+      boxes.push(chk);
+      setrow.appendChild(box);
+    }
+    for (var ri = 0; ri < ps.ramp; ri++) addBox("램" + (ri + 1), true);
+    for (var si = 0; si < ps.sets; si++) addBox(String(si + 1), false);
+    if (boxes.length) wrap.appendChild(setrow);
+
     wrap.appendChild(el("div", "tierline", cur.tier ? "티어 " + cur.tier + " · " + cur.score + "/15" : "티어 미채점"));
     wrap.appendChild(el("div", "cue", cur.cue));
 
-    var key = block.id + "::" + curId;
     var prev = lastPrev(key);
     var lastDiv = el("div", "last" + (prev ? "" : " none"), prev ? "지난 기록: " + fmtEntry(prev) : "지난 기록 없음");
     wrap.appendChild(lastDiv);
 
     var te = todayEntry(key);
+    var fill = te || prev; // 오늘 기록이 없으면 직전 기록으로 자동 채움(입력·체크 시점에 저장됨)
     var unit = store.units[key] === "lb" ? "lb" : "kg";
     var inrow = el("div", "inrow");
     var dW = el("div");
@@ -1198,26 +1282,28 @@
     wlab.appendChild(units);
     dW.appendChild(wlab);
     var inW = document.createElement("input"); inW.type = "number"; inW.step = "0.5"; inW.inputMode = "decimal";
-    inW.value = te && te.w != null ? te.w : "";
+    inW.value = fill && fill.w != null ? fill.w : "";
     dW.appendChild(inW); inrow.appendChild(dW);
     var dR = el("div"); dR.appendChild(el("label", null, "횟수(마지막 세트)"));
     var inR = document.createElement("input"); inR.type = "number"; inR.step = "1"; inR.inputMode = "numeric";
-    inR.value = te && te.r != null ? te.r : "";
+    inR.value = fill && fill.r != null ? fill.r : "";
     dR.appendChild(inR); inrow.appendChild(dR);
     wrap.appendChild(inrow);
 
     var dM = el("div", "memo"); dM.appendChild(el("label", "memolab", "메모"));
     var inM = document.createElement("input"); inM.type = "text";
-    inM.value = te && te.m ? te.m : "";
+    inM.value = fill && fill.m ? fill.m : "";
     dM.appendChild(inM); wrap.appendChild(dM);
 
     var hint = el("div", "savedhint", "");
     wrap.appendChild(hint);
 
     function onInput() {
-      upsertToday(key, inW.value.trim(), inR.value.trim(), inM.value.trim(), unit);
+      upsertToday(key, inW.value.trim(), inR.value.trim(), inM.value.trim(), unit,
+        boxes.map(function (b) { return b.checked; }));
       var d = new Date();
       hint.textContent = "저장됨 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+      showToast("저장됨 ✓");
       renderScore();
     }
     inW.addEventListener("input", onInput);
@@ -1417,6 +1503,7 @@
       save();
       var d = new Date();
       hint.textContent = "저장됨 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+      showToast("저장됨 ✓");
     }
     inB.addEventListener("input", onInput);
     inS.addEventListener("input", onInput);
@@ -1433,11 +1520,17 @@
   function fmt1(v) { return String(Math.round(v * 10) / 10); }
 
   // 종목 정보 팝업 — 추천 사유(전사 요약)·주의사항·시연 쇼츠 (영상은 열 때만 로드)
+  // 뒤로가기로 닫힘: 열 때 history state를 쌓고 popstate에서 닫는다
   var infoModal = document.getElementById("infoModal");
-  function openInfo(o) {
+  function openInfo(o, key, block) {
     document.getElementById("infoTitle").textContent = o.name;
     var b = document.getElementById("infoBody");
     b.textContent = "";
+    var sug = key && block ? suggestFor(key, block) : null;
+    if (sug) {
+      b.appendChild(el("div", "info-sec", "진행 판정"));
+      b.appendChild(el("div", "info-txt", (sug.dir === "up" ? "▲ " : "▼ ") + sug.txt));
+    }
     b.appendChild(el("div", "info-sec", "추천 사유"));
     b.appendChild(el("div", "info-txt", o.why || "—"));
     b.appendChild(el("div", "info-sec", "주의사항"));
@@ -1457,14 +1550,21 @@
     }
     infoModal.hidden = false;
     document.body.style.overflow = "hidden";
+    history.pushState({ layer: "info" }, "");
   }
-  function closeInfo() {
+  function closeInfoNow() {
     document.getElementById("infoBody").textContent = "";
     infoModal.hidden = true;
     document.body.style.overflow = "";
   }
+  function closeInfo() { if (!infoModal.hidden) history.back(); }
   document.getElementById("btnInfoClose").addEventListener("click", closeInfo);
   infoModal.addEventListener("click", function (e) { if (e.target === infoModal) closeInfo(); });
+  window.addEventListener("popstate", function () {
+    if (!infoModal.hidden) { closeInfoNow(); return; }
+    var rv = document.getElementById("recordsView");
+    if (!rv.hidden) { rv.hidden = true; document.body.style.overflow = ""; }
+  });
 
   // 종목 id → 이름·세션 내 순서 (세부 기록 표시용)
   var EXIDX = {};
@@ -1566,10 +1666,10 @@
     renderRecords();
     recordsView.hidden = false;
     document.body.style.overflow = "hidden";
+    history.pushState({ layer: "records" }, "");
   });
   document.getElementById("btnBack").addEventListener("click", function () {
-    recordsView.hidden = true;
-    document.body.style.overflow = "";
+    if (!recordsView.hidden) history.back();
   });
 
   function render() {
