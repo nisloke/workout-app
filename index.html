@@ -120,14 +120,15 @@
   .info-txt { font-size: 13.5px; line-height: 1.6; }
   .ytwrap { margin-top: 8px; display: flex; justify-content: center; }
   .ytwrap iframe { width: min(300px, 100%); aspect-ratio: 9 / 16; border: 0; border-radius: 10px; }
-  .prog { flex: none; font-size: 15px; font-weight: 700; line-height: 1; }
-  .prog.up { color: #10b981; }
-  .prog.down { color: #ef4444; }
-  .setrow { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; margin: 8px 0 2px; }
-  .setbox { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; color: var(--muted); }
-  .setbox input { width: 24px; height: 24px; margin: 0; accent-color: var(--accent); }
-  .setbox.rampbox { color: var(--hint); }
-  .setbox.rampbox input { accent-color: var(--hint); }
+  .prog { flex: none; font-size: 14px; font-weight: 700; line-height: 1; color: var(--muscle); }
+  .selrow { display: flex; gap: 6px; align-items: center; margin: 6px 0 4px; }
+  .selrow select { flex: 1; min-width: 0; margin: 0; }
+  .exline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 2px 0 4px; }
+  .exline .scheme { font-size: 13.5px; }
+  .setboxes { display: inline-flex; gap: 4px; margin-left: auto; }
+  .setchk { width: 24px; height: 24px; border-radius: 6px; border: 1.5px solid var(--border); background: var(--card); color: var(--muted); font-size: 11px; font-weight: 700; padding: 0; line-height: 1; }
+  .setchk.ramp { border-style: dashed; }
+  .setchk.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
   .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 18px; border-radius: 20px; font-size: 13.5px; font-weight: 700; z-index: 90; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
   .toast.show { opacity: 0.93; }
 </style>
@@ -148,7 +149,6 @@
 </header>
 <main>
   <div class="card" id="scoreCard"></div>
-  <div class="card order" id="orderBox"></div>
 
   <h2>오늘 컨디션 — 체중·수면</h2>
   <div class="card" id="dailyCard"></div>
@@ -174,7 +174,7 @@
     <li>증량 후 반복이 범위 <b>하한 밑</b>으로 떨어지면 잘못된 증량 — 직전 무게로 복귀.</li>
     <li>같은 종목이 <b>3세션 연속</b> 반복수 증가 없음 → 무게 10% 줄이고 다시 올라가기.</li>
     <li>기록 요령: 무게와 <b>마지막 세트의 반복수</b>를 적는다(증량 판단 기준이 되는 세트). 마지막 세트에서 이전보다 실패지점에 빨리 도달했다면 메모에 남긴다.</li>
-    <li>앱 자동 판정: 위 규칙에 부합하면 종목 카드에 <b style="color:#10b981">▲</b>(증량)/<b style="color:#ef4444">▼</b>(감량·복귀) 화살표가 표시된다 — 근거는 ⓘ 팝업의 "진행 판정" 참조. 판정은 마지막 세트 기록 기준의 기계 판정이며 폼 상태는 본인이 판단.</li>
+    <li>앱 자동 판정: 위 규칙에 부합하면 종목 카드에 <b>▲</b>(증량)/<b>▼</b>(감량·복귀) 화살표가 표시된다 — 근거는 ⓘ 팝업의 "진행 판정" 참조. 판정은 마지막 세트 기록 기준의 기계 판정이며 폼 상태는 본인이 판단.</li>
     <li>휴식시간은 <b>6주 고정</b> — 컨디션이 좋아도 줄이지 않는다.</li>
     <li>슈퍼세트: 두 종목을 쉬지 않고 1세트씩 이어서 하면 1라운드, <b>라운드 사이에만</b> 휴식.</li>
     <li>1주 이내 공백은 보충 없이 그냥 이어서 진행.</li>
@@ -1183,13 +1183,6 @@
     return null;
   }
 
-  function fmtEntry(e) {
-    var unit = e.u === "lb" ? "lb" : "kg";
-    var s = e.d.slice(5).replace("-", "/") + " · " + (e.w !== "" && e.w != null ? e.w + unit : "무게 미기록") + " × " + (e.r !== "" && e.r != null ? e.r + "회" : "횟수 미기록");
-    if (e.m) s += " · " + e.m;
-    return s;
-  }
-
   function renderBlock(block, labelPrefix) {
     var wrap = el("div", "ex");
     wrap.appendChild(el("div", "muscle", labelPrefix + " · " + block.muscle));
@@ -1203,57 +1196,58 @@
     var curId = store.sel[block.id];
     if (!block.options.some(function (o) { return o.id === curId; })) curId = block.options[0].id;
     sel.value = curId;
-    wrap.appendChild(sel);
 
     var cur = block.options.filter(function (o) { return o.id === curId; })[0];
     var key = block.id + "::" + curId;
 
-    var schemeText = block.scheme + (block.restText ? " · 휴식 " + block.restText : "");
-    var schemeRow = el("div", "schemerow");
-    schemeRow.appendChild(el("div", "scheme", schemeText));
-    var sug = suggestFor(key, block);
-    if (sug) {
-      var ar = el("span", "prog " + sug.dir, sug.dir === "up" ? "▲" : "▼");
-      ar.title = sug.txt;
-      schemeRow.appendChild(ar);
-    }
+    // 드롭다운 + 정보 아이콘 한 줄
+    var selrow = el("div", "selrow");
+    selrow.appendChild(sel);
     var ib = document.createElement("button");
     ib.type = "button";
     ib.className = "infobtn";
     ib.textContent = "i";
     ib.setAttribute("aria-label", cur.name + " 정보");
     ib.addEventListener("click", function () { openInfo(cur, key, block); });
-    schemeRow.appendChild(ib);
-    wrap.appendChild(schemeRow);
-    if (block.ramp) wrap.appendChild(el("div", "ramp", "램프 = 본세트 무게의 약 50%×8회 → 75%×3회"));
+    selrow.appendChild(ib);
+    wrap.appendChild(selrow);
 
-    // 세트 체크박스 (램프 포함)
+    // 세트×반복(축약)·휴식·판정 화살표·세트 토글 — 한 줄
+    var line = el("div", "exline");
+    var schemeTxt = block.scheme.replace("램프 ", "램").replace(" + ", "+");
+    if (block.restText) schemeTxt += " · 휴식" + block.restText;
+    line.appendChild(el("span", "scheme", schemeTxt));
+    var sug = suggestFor(key, block);
+    if (sug) {
+      var ar = el("span", "prog", sug.dir === "up" ? "▲" : "▼");
+      ar.title = sug.txt;
+      line.appendChild(ar);
+    }
     var ps = parseScheme(block.scheme);
     var teC = todayEntry(key);
-    var setrow = el("div", "setrow");
+    var boxwrap = el("span", "setboxes");
     var boxes = [];
     function addBox(lbl, isRamp) {
-      var box = el("label", "setbox" + (isRamp ? " rampbox" : ""));
-      var chk = document.createElement("input");
-      chk.type = "checkbox";
-      chk.checked = !!(teC && teC.c && teC.c[boxes.length]);
-      chk.addEventListener("change", function () { onInput(); });
-      box.appendChild(chk);
-      box.appendChild(el("span", null, lbl));
-      boxes.push(chk);
-      setrow.appendChild(box);
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "setchk" + (isRamp ? " ramp" : "");
+      b.textContent = lbl;
+      if (teC && teC.c && teC.c[boxes.length]) b.classList.add("on");
+      b.addEventListener("click", function () {
+        b.classList.toggle("on");
+        onInput();
+      });
+      boxes.push(b);
+      boxwrap.appendChild(b);
     }
-    for (var ri = 0; ri < ps.ramp; ri++) addBox("램" + (ri + 1), true);
+    for (var ri = 0; ri < ps.ramp; ri++) addBox("램", true);
     for (var si = 0; si < ps.sets; si++) addBox(String(si + 1), false);
-    if (boxes.length) wrap.appendChild(setrow);
+    if (boxes.length) line.appendChild(boxwrap);
+    wrap.appendChild(line);
 
     wrap.appendChild(el("div", "tierline", cur.tier ? "티어 " + cur.tier + " · " + cur.score + "/15" : "티어 미채점"));
-    wrap.appendChild(el("div", "cue", cur.cue));
 
     var prev = lastPrev(key);
-    var lastDiv = el("div", "last" + (prev ? "" : " none"), prev ? "지난 기록: " + fmtEntry(prev) : "지난 기록 없음");
-    wrap.appendChild(lastDiv);
-
     var te = todayEntry(key);
     var fill = te || prev; // 오늘 기록이 없으면 직전 기록으로 자동 채움(입력·체크 시점에 저장됨)
     var unit = store.units[key] === "lb" ? "lb" : "kg";
@@ -1300,7 +1294,7 @@
 
     function onInput() {
       upsertToday(key, inW.value.trim(), inR.value.trim(), inM.value.trim(), unit,
-        boxes.map(function (b) { return b.checked; }));
+        boxes.map(function (b) { return b.classList.contains("on"); }));
       var d = new Date();
       hint.textContent = "저장됨 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
       showToast("저장됨 ✓");
@@ -1462,28 +1456,23 @@
   function renderScore() {
     var box = document.getElementById("scoreCard");
     box.textContent = "";
-    box.appendChild(el("div", "chart-title", "운동 점수 진행"));
-    box.appendChild(scoreLegend());
-    var sc = scoreSeries(12);
-    box.appendChild(lineChart(sc.dates, sc.series, function (v) { return String(v); }));
-    box.appendChild(el("div", "chart-note", "점수 = 그날 기록한 각 종목의 무게(kg 환산)×횟수(마지막 세트) 합 · 최근 12회 · 무게 없는 맨몸 기록은 제외"));
+    box.appendChild(el("div", "chart-title", "운동 점수 진행 — " + session + " 세션"));
+    // 현재 선택한 세션만 표시(전체는 📊 기록 화면)
+    var sc = scoreSeries(0);
+    var series = sc.series.filter(function (s) { return s.name === session; });
+    var pts = series.length ? series[0].points.slice(-12) : [];
+    series = [{ name: session, color: session === "A" ? "var(--accent)" : "#10b981", points: pts }];
+    box.appendChild(lineChart(pts.map(function (p) { return p.d; }), series, function (v) { return String(v); }));
+    box.appendChild(el("div", "chart-note", "점수 = 그날 기록한 각 종목의 무게(kg 환산)×횟수(마지막 세트) 합 · " + session + " 세션 최근 12회 · A/B 통합 차트는 📊 기록"));
   }
 
   function renderDaily() {
     var box = document.getElementById("dailyCard");
     box.textContent = "";
     var td = todayStr();
-    var cur = store.daily[td] || {};
     var prevD = Object.keys(store.daily).filter(function (d) { return d < td; }).sort().pop();
-    if (prevD) {
-      var p = store.daily[prevD];
-      var parts = [];
-      if (p.bw) parts.push(p.bw + "kg");
-      if (p.sl) parts.push("수면 " + p.sl + "h");
-      box.appendChild(el("div", "last", "지난 기록: " + mmdd(prevD) + " · " + parts.join(" · ")));
-    } else {
-      box.appendChild(el("div", "last none", "지난 기록 없음"));
-    }
+    // 오늘 값이 없으면 직전 입력값(세션 무관)으로 자동 채움 — 입력 시점에 저장됨
+    var cur = store.daily[td] || (prevD ? store.daily[prevD] : {}) || {};
     var inrow = el("div", "inrow");
     var dB = el("div"); dB.appendChild(el("label", null, "체중(kg)"));
     var inB = document.createElement("input"); inB.type = "number"; inB.step = "0.1"; inB.inputMode = "decimal";
@@ -1531,6 +1520,8 @@
       b.appendChild(el("div", "info-sec", "진행 판정"));
       b.appendChild(el("div", "info-txt", (sug.dir === "up" ? "▲ " : "▼ ") + sug.txt));
     }
+    b.appendChild(el("div", "info-sec", "수행 방법"));
+    b.appendChild(el("div", "info-txt", (o.cue || "—") + (block && block.ramp ? " · 램프 = 본세트 무게의 약 50%×8회 → 75%×3회" : "")));
     b.appendChild(el("div", "info-sec", "추천 사유"));
     b.appendChild(el("div", "info-txt", o.why || "—"));
     b.appendChild(el("div", "info-sec", "주의사항"));
@@ -1676,13 +1667,6 @@
     document.getElementById("tabA").className = session === "A" ? "on" : "";
     document.getElementById("tabB").className = session === "B" ? "on" : "";
     var S = DATA.sessions[session];
-    var ob = document.getElementById("orderBox");
-    ob.textContent = "";
-    ob.appendChild(el("div", null, "오늘: " + session + " 세션 (" + S.days + ") — " + S.label));
-    var line = el("div");
-    line.innerHTML = "<b>① 집 모빌리티 8:00</b> → 헬스장: <b>② 유산소 워밍업 5:00</b> → <b>③ 근력 " + S.strength + "</b> → <b>④ 유산소 본절 14:00</b>";
-    ob.appendChild(line);
-    ob.appendChild(el("div", null, "헬스장 체류 " + S.gym + " · 집 포함 총 " + S.total));
     document.getElementById("strengthHead").textContent = "③ 근력 — " + session + " 세션 (" + S.days + ")";
     renderStrength();
     renderScore();
