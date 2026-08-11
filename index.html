@@ -106,6 +106,15 @@
   .dc-item { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; padding: 3px 0; line-height: 1.5; }
   .dc-item .val { white-space: nowrap; color: var(--muted); }
   .dc-memo { font-size: 12px; color: var(--hint); margin: -2px 0 4px; }
+  .badge-none { background: var(--hint); }
+  .dc-item .nm { flex: 1; min-width: 0; }
+  .rowctl { display: inline-flex; gap: 4px; flex: none; }
+  .rowbtn { border: 1px solid var(--border); background: var(--card); color: var(--muted); border-radius: 6px; font-size: 12px; padding: 3px 7px; line-height: 1.2; }
+  .rowbtn.save { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  .editrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; }
+  .editrow input[type=number] { width: 64px; font-size: 14px; padding: 6px 8px; }
+  .editrow .editmemo { flex: 1 1 100%; font-size: 14px; padding: 6px 8px; }
+  .editunit { font-size: 12px; color: var(--muted); }
   .syncrow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .syncrow button { padding: 10px 14px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); }
   .syncstatus { font-size: 12px; color: var(--muted); line-height: 1.4; }
@@ -1579,58 +1588,165 @@
     return prefix + p[1] + "/" + p[2] + " (" + wd + ")";
   }
 
+  var openDates = {}; // 편집·삭제 후 재렌더에도 펼침 상태 유지
+
+  function refreshAfterRecordChange() {
+    save();
+    renderRecords();
+    render();
+    renderDaily();
+  }
+
+  function iconBtn(txt, label, cls, fn) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "rowbtn" + (cls ? " " + cls : "");
+    b.textContent = txt;
+    b.setAttribute("aria-label", label);
+    b.addEventListener("click", fn);
+    return b;
+  }
+
+  function editItem(it, row) {
+    var e = it.entry;
+    var form = el("div", "editrow");
+    var inW = document.createElement("input"); inW.type = "number"; inW.step = "0.5"; inW.inputMode = "decimal"; inW.value = e.w || "";
+    var inR = document.createElement("input"); inR.type = "number"; inR.step = "1"; inR.inputMode = "numeric"; inR.value = e.r || "";
+    var inM = document.createElement("input"); inM.type = "text"; inM.className = "editmemo"; inM.value = e.m || "";
+    form.appendChild(inW);
+    form.appendChild(el("span", "editunit", e.u === "lb" ? "lb" : "kg"));
+    form.appendChild(inR);
+    form.appendChild(el("span", "editunit", "회"));
+    form.appendChild(iconBtn("저장", "저장", "save", function () {
+      e.w = inW.value.trim(); e.r = inR.value.trim(); e.m = inM.value.trim();
+      if (!e.w && !e.r && !e.m && !(e.c && e.c.some(function (x) { return x; }))) {
+        var arr = store.rec[it.key] || [];
+        var ix = arr.indexOf(e);
+        if (ix >= 0) arr.splice(ix, 1);
+        if (!arr.length) delete store.rec[it.key];
+      }
+      refreshAfterRecordChange();
+      showToast("저장됨 ✓");
+    }));
+    form.appendChild(iconBtn("취소", "취소", "", function () { renderDayList(); }));
+    form.appendChild(inM);
+    row.replaceWith(form);
+    inW.focus();
+  }
+
+  function editDaily(d, row) {
+    var v = store.daily[d] || {};
+    var form = el("div", "editrow");
+    var inB = document.createElement("input"); inB.type = "number"; inB.step = "0.1"; inB.inputMode = "decimal"; inB.value = v.bw || "";
+    var inS = document.createElement("input"); inS.type = "number"; inS.step = "0.1"; inS.inputMode = "decimal"; inS.value = v.sl || "";
+    form.appendChild(inB);
+    form.appendChild(el("span", "editunit", "kg"));
+    form.appendChild(inS);
+    form.appendChild(el("span", "editunit", "h"));
+    form.appendChild(iconBtn("저장", "저장", "save", function () {
+      var bw = inB.value.trim(), sl = inS.value.trim();
+      if (!bw && !sl) delete store.daily[d];
+      else store.daily[d] = { bw: bw, sl: sl };
+      refreshAfterRecordChange();
+      showToast("저장됨 ✓");
+    }));
+    form.appendChild(iconBtn("취소", "취소", "", function () { renderDayList(); }));
+    row.replaceWith(form);
+    inB.focus();
+  }
+
   function renderDayList() {
     var box = document.getElementById("dayList");
     box.textContent = "";
     var byDate = {};
+    function slotFor(d) {
+      if (!byDate[d]) byDate[d] = { score: 0, hasA: false, hasB: false, items: [], daily: null };
+      return byDate[d];
+    }
     Object.keys(store.rec).forEach(function (key) {
       var slotId = key.split("::")[0];
       var exId = key.split("::")[1];
       var sess = slotId.charAt(0) === "b" ? "B" : "A";
       var meta = EXIDX[exId] || { name: exId, order: 99 };
       (store.rec[key] || []).forEach(function (e) {
-        if (!byDate[e.d]) byDate[e.d] = { score: 0, hasA: false, hasB: false, items: [] };
-        var v = byDate[e.d];
+        var v = slotFor(e.d);
         if (sess === "B") v.hasB = true; else v.hasA = true;
         var kg = toKg(e.w, e.u);
         var r = parseFloat(e.r);
         if (kg != null && isFinite(r) && r > 0) v.score += kg * r;
-        v.items.push({ order: meta.order, name: meta.name,
-          w: e.w || "", u: e.u === "lb" ? "lb" : "kg", r: e.r || "", m: e.m || "" });
+        v.items.push({ order: meta.order, name: meta.name, key: key, entry: e });
       });
     });
+    Object.keys(store.daily).forEach(function (d) { slotFor(d).daily = store.daily[d]; });
     var dates = Object.keys(byDate).sort().reverse();
     if (!dates.length) {
-      box.appendChild(el("div", "card chart-empty", "운동 기록이 쌓이면 표시됩니다"));
+      box.appendChild(el("div", "card chart-empty", "기록이 쌓이면 표시됩니다"));
       return;
     }
     dates.forEach(function (d) {
       var v = byDate[d];
-      var card = el("div", "card datecard");
+      var card = el("div", "card datecard" + (openDates[d] ? " open" : ""));
       var face = document.createElement("button");
       face.type = "button";
       face.className = "dc-face";
       face.appendChild(el("span", "dc-date", dateLabel(d)));
-      var sessTxt = v.hasA && v.hasB ? "A·B" : (v.hasB ? "B" : "A");
-      face.appendChild(el("span", "dc-badge badge-" + (v.hasA && v.hasB ? "AB" : sessTxt), sessTxt));
-      face.appendChild(el("span", "dc-score", Math.round(v.score) + "점"));
-      var caret = el("span", "dc-caret", "▼");
+      if (v.items.length) {
+        var sessTxt = v.hasA && v.hasB ? "A·B" : (v.hasB ? "B" : "A");
+        face.appendChild(el("span", "dc-badge badge-" + (v.hasA && v.hasB ? "AB" : sessTxt), sessTxt));
+        face.appendChild(el("span", "dc-score", Math.round(v.score) + "점"));
+      } else {
+        face.appendChild(el("span", "dc-badge badge-none", "컨디션"));
+        face.appendChild(el("span", "dc-score", ""));
+      }
+      var caret = el("span", "dc-caret", openDates[d] ? "▲" : "▼");
       face.appendChild(caret);
       card.appendChild(face);
       var body = el("div", "dc-body");
+      if (v.daily) {
+        var drow = el("div", "dc-item");
+        drow.appendChild(el("span", "nm", "컨디션"));
+        var parts = [];
+        if (v.daily.bw) parts.push(v.daily.bw + "kg");
+        if (v.daily.sl) parts.push("수면 " + v.daily.sl + "h");
+        drow.appendChild(el("span", "val", parts.join(" · ") || "—"));
+        var dctl = el("span", "rowctl");
+        dctl.appendChild(iconBtn("✎", "컨디션 편집", "", function () { editDaily(d, drow); }));
+        dctl.appendChild(iconBtn("✕", "컨디션 삭제", "", function () {
+          if (!confirm(dateLabel(d) + " 체중·수면 기록을 삭제할까요?")) return;
+          delete store.daily[d];
+          refreshAfterRecordChange();
+          showToast("삭제됨");
+        }));
+        drow.appendChild(dctl);
+        body.appendChild(drow);
+      }
       v.items.sort(function (a, b) { return a.order - b.order; });
       v.items.forEach(function (it) {
+        var e = it.entry;
         var row = el("div", "dc-item");
         row.appendChild(el("span", "nm", it.name));
-        var val = (it.w !== "" ? it.w + it.u : "—") + " × " + (it.r !== "" ? it.r + "회" : "—");
+        var val = (e.w ? e.w + (e.u === "lb" ? "lb" : "kg") : "—") + " × " + (e.r ? e.r + "회" : "—");
         row.appendChild(el("span", "val", val));
+        var ctl = el("span", "rowctl");
+        ctl.appendChild(iconBtn("✎", it.name + " 편집", "", function () { editItem(it, row); }));
+        ctl.appendChild(iconBtn("✕", it.name + " 삭제", "", function () {
+          if (!confirm(dateLabel(d) + " " + it.name + " 기록을 삭제할까요?")) return;
+          var arr = store.rec[it.key] || [];
+          var ix = arr.indexOf(e);
+          if (ix >= 0) arr.splice(ix, 1);
+          if (!arr.length) delete store.rec[it.key];
+          refreshAfterRecordChange();
+          showToast("삭제됨");
+        }));
+        row.appendChild(ctl);
         body.appendChild(row);
-        if (it.m) body.appendChild(el("div", "dc-memo", "메모: " + it.m));
+        if (e.m) body.appendChild(el("div", "dc-memo", "메모: " + e.m));
       });
       card.appendChild(body);
       face.addEventListener("click", function () {
         card.classList.toggle("open");
-        caret.textContent = card.classList.contains("open") ? "▲" : "▼";
+        openDates[d] = card.classList.contains("open");
+        caret.textContent = openDates[d] ? "▲" : "▼";
       });
       box.appendChild(card);
     });
