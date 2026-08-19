@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 성격
 
-주 4회 2분할 운동 기록 웹앱. **단일 `index.html`**(약 1,940줄)에 데이터·스타일·로직이 모두 들어 있고 빌드 도구·패키지 매니저·테스트 러너·번들러가 전혀 없다. 외부 런타임 의존은 Firebase SDK(ESM CDN 동적 import)와 정보 팝업의 YouTube iframe 뿐이다.
+주 4회 2분할 운동 기록 웹앱. **단일 `index.html`**(약 2,030줄)에 데이터·스타일·로직이 모두 들어 있고 빌드 도구·패키지 매니저·테스트 러너·번들러가 전혀 없다. 외부 런타임 의존은 Firebase SDK(ESM CDN 동적 import)와 정보 팝업의 YouTube iframe 뿐이다.
 
 - 라이브: https://nisloke.github.io/workout-app/ (GitHub Pages, `main` 루트 서빙 → **push = 배포**)
 - 리포: `nisloke/workout-app` (public)
@@ -104,10 +104,10 @@ git -C C:\Users\User\Documents\workout-program add -A; git -C C:\Users\User\Docu
 
 | 줄 범위 | 내용 |
 |---|---|
-| ~7–140 | CSS. 라이트 기본 + `@media (prefers-color-scheme: dark)` + `:root[data-theme="dark"]` 3중 정의 (토글이 양방향으로 이기게) |
-| ~145–237 | HTML 골격. 메인 화면 + `#recordsView`(기록 오버레이) + `#infoModal`(종목 정보) + `#toast` |
-| 239–1052 | `<script id="appdata" type="application/json">` — **프로그램 데이터 전량** |
-| 1054–1940 | IIFE 앱 로직 (`"use strict"`, 프레임워크 없음, 순수 DOM) |
+| 7–154 | CSS. 라이트 기본 + `@media (prefers-color-scheme: dark)` + `:root[data-theme="dark"]` 3중 정의 (토글이 양방향으로 이기게) |
+| 156–261 | HTML 골격. 메인 화면 + `#recordsView`(기록 오버레이) + `#infoModal`(종목 정보) + `#toast` |
+| 263–1076 | `<script id="appdata" type="application/json">` — **프로그램 데이터 전량** |
+| 1078–2032 | IIFE 앱 로직 (`"use strict"`, 프레임워크 없음, 순수 DOM) |
 
 ## 데이터 스키마 (`#appdata`)
 
@@ -141,13 +141,24 @@ git -C C:\Users\User\Documents\workout-program add -A; git -C C:\Users\User\Docu
 - **기록 키는 반드시 `blockId::optionId`.** 종목 id 단독 키는 한 세션의 두 슬롯에 같은 종목을 고르면 기록이 뭉개진다(실증된 함정).
 - `w`/`r`/`m`은 문자열 그대로 저장, `u`는 단위, `c`는 세트 체크 boolean 배열(램프 포함).
 - `save()`는 `ui.savedAt = Date.now()` 갱신 → `localStorage` 기록 → `schedulePush()`(1.5초 디바운스 클라우드 푸시)를 **항상 이 순서로** 한다. 저장 경로를 우회해 `localStorage`에 직접 쓰면 동기화가 끊긴다(예외: `pullCloud()`가 원격 승리 시 의도적으로 직접 씀).
-- 입력은 **자동 저장**이다. 저장 버튼이 없고 `input` 이벤트마다 `upsertToday()`가 돈다. 무게·횟수·메모가 모두 비고 체크도 없으면 그날 엔트리를 삭제하고, 배열이 비면 키 자체를 지운다.
+- 입력은 **자동 저장**이다. 저장 버튼이 없고 `input` 이벤트마다 `upsertEntry()`가 돈다. 무게·횟수·메모가 모두 비고 체크도 없으면 그날 엔트리를 삭제하고, 배열이 비면 키 자체를 지운다.
+
+## 기록 대상 날짜 (`recDate`)
+
+빠뜨린 종목을 나중에 채워 넣을 수 있도록, 입력 화면 전체가 **활성 날짜 하나**를 바라본다(정정대장 #20).
+
+- `recDate`가 기록 대상 날짜다. 기본은 오늘이고 `isPastMode()`는 `recDate !== todayStr()`.
+- **`recDate`는 저장하지 않는다.** 앱을 다시 열면 항상 오늘이다 — 과거 모드로 방치한 채 다음 운동을 오기록하는 사고를 막는 안전장치이므로 `store`에 넣지 말 것.
+- 날짜에 의존하는 함수는 **`upsertEntry`·`lastPrev`·`activeEntry`·`renderDaily` 네 곳**이며 모두 `recDate`를 쓴다. `todayStr()`은 세션 요일 제안·`store.ui.date`·내보내기 파일명에만 남아 있다. **새 코드에서 "기록 대상 날짜"로 `todayStr()`을 부르면 버그다.**
+- 진입점은 기록 화면 두 곳(상단 날짜 입력, 각 날짜 카드의 `＋ 이 날짜에 기록 추가`) → `openRecordDate(d)`. 복귀는 헤더 배너의 `오늘로` → `goToday()`. 메인 화면에는 과거 모드일 때만 배너가 뜬다.
+- 과거 모드에서 억제되는 것: **진행 판정 화살표·ⓘ 팝업의 "진행 판정"**(판정은 최신 기록 기준이라 과거 화면에서 보이면 오독한다), **`store.sel` 쓰기**(그날 실제로 한 종목을 고르는 것이 오늘의 기본 종목을 덮지 않도록 `selTemp`로 격리 — `selFor()`로 읽는다), **`store.ui.session`/`date` 쓰기**(`setSession`이 분기한다).
+- 세션 제안은 `sessionForDate(d)` — 그 날짜에 한쪽 세션 기록만 있으면 그 세션, 없으면 요일 기준.
 
 ## 렌더 파이프라인
 
 전면 재렌더 방식이다. 부분 갱신 최적화를 넣지 말 것.
 
-- `render()` = 탭 상태 + `renderStrength()` + `renderScore()`. 종목 드롭다운 변경 시 `render()` 전체 호출.
+- `render()` = 배너(`renderDateBar()`) + 탭 상태 + `renderStrength()` + `renderScore()`. 종목 드롭다운 변경 시 `render()` 전체 호출.
 - `renderBlock(block, labelPrefix)`가 카드 1개(드롭다운·ⓘ·축약 세트표기·판정 화살표·세트 체크박스·티어줄·무게/횟수/메모)를 만든다. 여기가 UI 변경의 중심.
 - `refreshAfterRecordChange()` = `save()` + `renderRecords()` + `render()` + `renderDaily()` — 기록 화면에서 편집·삭제한 뒤 반드시 이걸 호출한다.
 - 차트는 `lineChart()`가 손으로 그리는 SVG(340×140, 라이브러리 없음). 색은 CSS 변수(`var(--accent)`)를 그대로 SVG 속성에 넣어 테마를 따라간다.

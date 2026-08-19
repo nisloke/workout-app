@@ -44,6 +44,11 @@
   .tabs { display: flex; gap: 8px; }
   .tabs button { flex: 1; padding: 10px 4px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--muscle); }
   .tabs button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  /* 과거 날짜 기록 모드 배너 — 오늘이면 hidden. [hidden] 병기 필수(author display가 UA를 이김) */
+  .datebar { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 7px 10px; border-radius: 8px; font-size: 13px; font-weight: 700; background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--cue-border); }
+  .datebar[hidden] { display: none; }
+  .datebar .db-lab { flex: 1; min-width: 0; }
+  .datebar button { border: 1px solid currentColor; background: transparent; color: inherit; border-radius: 6px; font-size: 12px; font-weight: 700; padding: 4px 8px; }
   main { max-width: 520px; margin: 0 auto; padding: 12px 12px 56px; }
   h2 { font-size: 15px; margin: 22px 4px 8px; color: var(--head); }
   .card { background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow); }
@@ -111,11 +116,17 @@
   .rowctl { display: inline-flex; gap: 4px; flex: none; }
   .rowbtn { border: 1px solid var(--border); background: var(--card); color: var(--muted); border-radius: 6px; font-size: 12px; padding: 3px 7px; line-height: 1.2; }
   .rowbtn.save { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  .ad-row { display: flex; align-items: center; gap: 8px; }
+  .ad-row label { font-size: 13px; font-weight: 700; color: var(--head); white-space: nowrap; }
+  .ad-row input[type="date"] { flex: 1; min-width: 0; font-size: 15px; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); }
+  .ad-row button { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text); border-radius: 8px; font-size: 13px; font-weight: 700; padding: 8px 12px; white-space: nowrap; }
+  .dc-add { display: block; width: 100%; margin-top: 8px; border: 1px dashed var(--border); background: transparent; color: var(--accent); border-radius: 8px; font-size: 13px; font-weight: 700; padding: 7px; }
   .editrow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; }
   .editrow input[type=number] { width: 64px; font-size: 14px; padding: 6px 8px; }
   .editrow .editmemo { flex: 1 1 100%; font-size: 14px; padding: 6px 8px; }
   .editunit { font-size: 12px; color: var(--muted); }
   .syncrow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .syncrow[hidden] { display: none; }
   .syncrow button { padding: 10px 14px; font-size: 14px; font-weight: 700; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); }
   .syncstatus { font-size: 12px; color: var(--muted); line-height: 1.4; }
   .schemerow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -151,6 +162,11 @@
       <button id="btnTheme" type="button" aria-label="다크/라이트 전환">🌙</button>
     </div>
   </div>
+  <div class="datebar" id="dateBar" hidden>
+    <span>📅</span>
+    <span class="db-lab" id="dbLabel"></span>
+    <button type="button" id="btnToday">오늘로</button>
+  </div>
   <div class="tabs">
     <button id="tabA" type="button">A · 밀기+하체 전면 (월·목)</button>
     <button id="tabB" type="button">B · 당기기+하체 후면 (화·금)</button>
@@ -159,7 +175,7 @@
 <main>
   <div class="card" id="scoreCard"></div>
 
-  <h2>오늘 컨디션 — 체중·수면</h2>
+  <h2 id="dailyHead">오늘 컨디션 — 체중·수면</h2>
   <div class="card" id="dailyCard"></div>
 
   <h2>① 집 모빌리티 대본 — 8:00 (480초)</h2>
@@ -216,6 +232,14 @@
 <div class="overlay" id="recordsView" hidden>
   <div class="ovhead"><button id="btnBack" type="button">← 돌아가기</button><b>기록 차트</b></div>
   <div class="ovin">
+    <div class="card">
+      <div class="ad-row">
+        <label for="adDate">다른 날짜에 기록</label>
+        <input type="date" id="adDate">
+        <button type="button" id="btnAddDay">열기</button>
+      </div>
+      <div class="note" style="margin:8px 4px 0">빠뜨린 종목을 채워 넣으려면 날짜를 고르고 열면 된다 — 입력 화면이 그 날짜로 전환되고, 평소처럼 종목을 골라 기록하면 그 날짜로 저장된다.</div>
+    </div>
     <h2>체중 (kg)</h2>
     <div class="card" id="chartBw"></div>
     <h2>수면시간 (h)</h2>
@@ -1077,24 +1101,61 @@
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
 
-  // 오늘 다시 열면 마지막 선택 유지, 날이 바뀌면 요일로 제안(월·목=A, 화·금=B)
+  // 기록 대상 날짜. 기본은 오늘이고, 기록 화면에서 과거 날짜를 열면 그 날짜로 바뀐다.
+  // ★ 저장하지 않는다 — 앱을 다시 열면 항상 오늘로 돌아간다(과거 모드로 방치한 채 다음 운동을 오기록하는 사고 방지).
+  var recDate = todayStr();
+  function isPastMode() { return recDate !== todayStr(); }
+  // 과거 모드에서만 쓰는 임시 종목 선택(저장 안 함) — 오늘로 돌아가면 버린다
+  var selTemp = null;
+  function selFor(blockId) { return (selTemp && selTemp[blockId]) || store.sel[blockId]; }
+
+  // 그 날짜에 한쪽 세션 기록만 있으면 그 세션, 아니면 요일로 제안(월·목=A, 화·금=B)
+  function sessionForDate(d) {
+    var has = { A: false, B: false };
+    Object.keys(store.rec).forEach(function (key) {
+      var sess = key.charAt(0) === "b" ? "B" : "A";
+      (store.rec[key] || []).forEach(function (e) { if (e.d === d) has[sess] = true; });
+    });
+    if (has.A !== has.B) return has.A ? "A" : "B";
+    var p = d.split("-");
+    var wd = new Date(+p[0], +p[1] - 1, +p[2]).getDay();
+    return (wd === 2 || wd === 5) ? "B" : "A";
+  }
+
+  // 오늘 다시 열면 마지막 선택 유지, 날이 바뀌면 제안
   var session;
   (function () {
     var td = todayStr();
     if (store.ui.date === td && (store.ui.session === "A" || store.ui.session === "B")) { session = store.ui.session; return; }
-    var wd = new Date().getDay();
-    session = (wd === 2 || wd === 5) ? "B" : "A";
+    session = sessionForDate(td);
   })();
 
   function setSession(s) {
     session = s;
-    store.ui.session = s;
-    store.ui.date = todayStr();
-    save();
+    // 과거 모드에서는 "오늘의 선택"을 덮어쓰지 않는다
+    if (!isPastMode()) { store.ui.session = s; store.ui.date = todayStr(); save(); }
     render();
   }
   document.getElementById("tabA").addEventListener("click", function () { setSession("A"); });
   document.getElementById("tabB").addEventListener("click", function () { setSession("B"); });
+
+  // 과거 날짜 배너 — 오늘이면 감춘다
+  var dateBar = document.getElementById("dateBar");
+  function renderDateBar() {
+    if (!isPastMode()) { dateBar.hidden = true; return; }
+    dateBar.hidden = false;
+    document.getElementById("dbLabel").textContent = dateLabel(recDate) + " 기록 중";
+  }
+  function goToday() {
+    if (!isPastMode()) return;
+    recDate = todayStr();
+    selTemp = null;
+    session = (store.ui.date === recDate && (store.ui.session === "A" || store.ui.session === "B")) ? store.ui.session : sessionForDate(recDate);
+    renderDaily();
+    render();
+    showToast("오늘로 돌아왔습니다");
+  }
+  document.getElementById("btnToday").addEventListener("click", goToday);
 
   // 테마: 기본은 시스템 설정, 토글 시 명시 선택을 저장
   var btnTheme = document.getElementById("btnTheme");
@@ -1121,8 +1182,9 @@
 
   function entriesFor(key) { return store.rec[key] || []; }
 
-  function upsertToday(key, w, r, m, u, c) {
-    var td = todayStr();
+  // 활성 날짜(recDate) 기준 upsert — 오늘일 수도, 기록 화면에서 연 과거 날짜일 수도 있다
+  function upsertEntry(key, w, r, m, u, c) {
+    var td = recDate;
     var arr = store.rec[key] || (store.rec[key] = []);
     var i, e = null;
     for (i = 0; i < arr.length; i++) if (arr[i].d === td) { e = arr[i]; break; }
@@ -1179,14 +1241,15 @@
     toastTimer = setTimeout(function () { t.className = "toast"; }, 1400);
   }
 
+  // 활성 날짜보다 앞선 기록 중 최신 — 자동 채움·비교용(오늘 기준이 아니다)
   function lastPrev(key) {
-    var td = todayStr();
+    var td = recDate;
     var arr = entriesFor(key).filter(function (e) { return e.d < td; });
     arr.sort(function (a, b) { return a.d < b.d ? 1 : -1; });
     return arr[0] || null;
   }
-  function todayEntry(key) {
-    var td = todayStr();
+  function activeEntry(key) {
+    var td = recDate;
     var arr = entriesFor(key);
     for (var i = 0; i < arr.length; i++) if (arr[i].d === td) return arr[i];
     return null;
@@ -1202,7 +1265,7 @@
       op.value = o.id; op.textContent = o.name;
       sel.appendChild(op);
     });
-    var curId = store.sel[block.id];
+    var curId = selFor(block.id);
     if (!block.options.some(function (o) { return o.id === curId; })) curId = block.options[0].id;
     sel.value = curId;
 
@@ -1226,14 +1289,14 @@
     var schemeTxt = block.scheme.replace("램프 ", "램").replace(" + ", "+");
     if (block.restText) schemeTxt += " · 휴식" + block.restText;
     line.appendChild(el("span", "scheme", schemeTxt));
-    var sug = suggestFor(key, block);
+    var sug = isPastMode() ? null : suggestFor(key, block);
     if (sug) {
       var ar = el("span", "prog", sug.dir === "up" ? "▲" : "▼");
       ar.title = sug.txt;
       line.appendChild(ar);
     }
     var ps = parseScheme(block.scheme);
-    var teC = todayEntry(key);
+    var teC = activeEntry(key);
     var boxwrap = el("span", "setboxes");
     var boxes = [];
     function addBox(lbl, isRamp) {
@@ -1257,7 +1320,7 @@
     wrap.appendChild(el("div", "tierline", cur.tier ? "티어 " + cur.tier + " · " + cur.score + "/15" : "티어 미채점"));
 
     var prev = lastPrev(key);
-    var te = todayEntry(key);
+    var te = activeEntry(key);
     var fill = te || prev; // 오늘 기록이 없으면 직전 기록으로 자동 채움(입력·체크 시점에 저장됨)
     var unit = store.units[key] === "lb" ? "lb" : "kg";
     var inrow = el("div", "inrow");
@@ -1274,7 +1337,7 @@
         if (unit === u) return;
         unit = u;
         store.units[key] = u;
-        var e2 = todayEntry(key);
+        var e2 = activeEntry(key);
         if (e2) e2.u = u;
         save();
         Object.keys(ubtns).forEach(function (k) { ubtns[k].className = k === u ? "on" : ""; });
@@ -1302,7 +1365,7 @@
     wrap.appendChild(hint);
 
     function onInput() {
-      upsertToday(key, inW.value.trim(), inR.value.trim(), inM.value.trim(), unit,
+      upsertEntry(key, inW.value.trim(), inR.value.trim(), inM.value.trim(), unit,
         boxes.map(function (b) { return b.classList.contains("on"); }));
       var d = new Date();
       hint.textContent = "저장됨 " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
@@ -1314,8 +1377,9 @@
     inM.addEventListener("input", onInput);
 
     sel.addEventListener("change", function () {
-      store.sel[block.id] = sel.value;
-      save();
+      // 과거 모드의 종목 교체는 저장하지 않는다 — 오늘의 기본 종목을 덮어쓰지 않게
+      if (isPastMode()) { (selTemp = selTemp || {})[block.id] = sel.value; }
+      else { store.sel[block.id] = sel.value; save(); }
       render();
     });
 
@@ -1478,9 +1542,10 @@
   function renderDaily() {
     var box = document.getElementById("dailyCard");
     box.textContent = "";
-    var td = todayStr();
+    document.getElementById("dailyHead").textContent = (isPastMode() ? dateLabel(recDate) : "오늘") + " 컨디션 — 체중·수면";
+    var td = recDate;
     var prevD = Object.keys(store.daily).filter(function (d) { return d < td; }).sort().pop();
-    // 오늘 값이 없으면 직전 입력값(세션 무관)으로 자동 채움 — 입력 시점에 저장됨
+    // 그날 값이 없으면 직전 입력값(세션 무관)으로 자동 채움 — 입력 시점에 저장됨
     var cur = store.daily[td] || (prevD ? store.daily[prevD] : {}) || {};
     var inrow = el("div", "inrow");
     var dB = el("div"); dB.appendChild(el("label", null, "체중(kg)"));
@@ -1524,7 +1589,7 @@
     document.getElementById("infoTitle").textContent = o.name;
     var b = document.getElementById("infoBody");
     b.textContent = "";
-    var sug = key && block ? suggestFor(key, block) : null;
+    var sug = (!isPastMode() && key && block) ? suggestFor(key, block) : null;
     if (sug) {
       b.appendChild(el("div", "info-sec", "진행 판정"));
       b.appendChild(el("div", "info-txt", (sug.dir === "up" ? "▲ " : "▼ ") + sug.txt));
@@ -1742,6 +1807,12 @@
         body.appendChild(row);
         if (e.m) body.appendChild(el("div", "dc-memo", "메모: " + e.m));
       });
+      var addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "dc-add";
+      addBtn.textContent = "＋ 이 날짜에 기록 추가";
+      addBtn.addEventListener("click", function () { openRecordDate(d); });
+      body.appendChild(addBtn);
       card.appendChild(body);
       face.addEventListener("click", function () {
         card.classList.toggle("open");
@@ -1753,6 +1824,9 @@
   }
 
   function renderRecords() {
+    var ad = document.getElementById("adDate");
+    ad.max = todayStr();
+    if (!ad.value) ad.value = recDate;
     var bw = dailySeries("bw");
     var box = document.getElementById("chartBw");
     box.textContent = "";
@@ -1779,7 +1853,27 @@
     if (!recordsView.hidden) history.back();
   });
 
+  // 기록 화면 → 그 날짜의 입력 화면으로. 빠뜨린 종목은 평소 입력 UI 그대로 채워 넣는다
+  function openRecordDate(d) {
+    recDate = d;
+    selTemp = null;
+    session = sessionForDate(d);
+    if (!recordsView.hidden) history.back(); // popstate가 기록 화면을 닫는다
+    renderDaily();
+    render();
+    window.scrollTo(0, 0);
+    showToast(dateLabel(d) + (isPastMode() ? " 기록 모드" : " (오늘)"));
+  }
+  var adDate = document.getElementById("adDate");
+  document.getElementById("btnAddDay").addEventListener("click", function () {
+    var d = adDate.value;
+    if (!d) { showToast("날짜를 선택하세요"); return; }
+    if (d > todayStr()) { showToast("미래 날짜는 기록할 수 없습니다"); return; }
+    openRecordDate(d);
+  });
+
   function render() {
+    renderDateBar();
     document.getElementById("tabA").className = session === "A" ? "on" : "";
     document.getElementById("tabB").className = session === "B" ? "on" : "";
     var S = DATA.sessions[session];
