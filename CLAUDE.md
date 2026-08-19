@@ -152,7 +152,7 @@ git -C C:\Users\User\Documents\workout-program add -A; git -C C:\Users\User\Docu
 - 날짜에 의존하는 함수는 **`upsertEntry`·`lastPrev`·`activeEntry`·`renderDaily` 네 곳**이며 모두 `recDate`를 쓴다. `todayStr()`은 세션 요일 제안·`store.ui.date`·내보내기 파일명에만 남아 있다. **새 코드에서 "기록 대상 날짜"로 `todayStr()`을 부르면 버그다.**
 - 진입점은 기록 화면 두 곳(상단 날짜 입력, 각 날짜 카드의 `＋ 이 날짜에 기록 추가`) → `openRecordDate(d)`. 복귀는 헤더 배너의 `오늘로` → `goToday()`. 메인 화면에는 과거 모드일 때만 배너가 뜬다.
 - 과거 모드에서 억제되는 것: **진행 판정 화살표·ⓘ 팝업의 "진행 판정"**(판정은 최신 기록 기준이라 과거 화면에서 보이면 오독한다), **`store.sel` 쓰기**(그날 실제로 한 종목을 고르는 것이 오늘의 기본 종목을 덮지 않도록 `selTemp`로 격리 — `selFor()`로 읽는다), **`store.ui.session`/`date` 쓰기**(`setSession`이 분기한다).
-- 세션 제안은 `sessionForDate(d)` — 그 날짜에 한쪽 세션 기록만 있으면 그 세션, 없으면 요일 기준.
+- 세션 제안은 `sessionForDate(d)` — 우선순위 3단계로 **①그 날짜에 이미 한쪽 세션만 기록돼 있으면 그 세션 → ②직전 운동일과 교대(A였으면 B, B였으면 A) → ③요일(월·목=A, 화·금=B)**. ②가 실사용 기본 경로다(정정대장 #23). 탭을 직접 눌러 고른 선택은 그날 안에서 제안을 이긴다(`store.ui.date`/`session`). 날짜별 세션 유무는 `sessionDays()`가 뽑는데, **`dayIndex()`와 달리 `EXIDX`를 쓰지 않는다** — 세션 초기화가 `EXIDX` 채우기보다 먼저 돌기 때문이다.
 
 ## 렌더 파이프라인
 

@@ -1142,14 +1142,29 @@
   var selTemp = null;
   function selFor(blockId) { return (selTemp && selTemp[blockId]) || store.sel[blockId]; }
 
-  // 그 날짜에 한쪽 세션 기록만 있으면 그 세션, 아니면 요일로 제안(월·목=A, 화·금=B)
-  function sessionForDate(d) {
-    var has = { A: false, B: false };
+  // 날짜별 세션 유무만 뽑는다 — 이름·순서가 필요 없어 EXIDX 초기화 전에도 안전하다(dayIndex와 다른 지점)
+  function sessionDays() {
+    var m = {};
     Object.keys(store.rec).forEach(function (key) {
       var sess = key.charAt(0) === "b" ? "B" : "A";
-      (store.rec[key] || []).forEach(function (e) { if (e.d === d) has[sess] = true; });
+      (store.rec[key] || []).forEach(function (e) {
+        var v = m[e.d] || (m[e.d] = { A: false, B: false });
+        v[sess] = true;
+      });
     });
-    if (has.A !== has.B) return has.A ? "A" : "B";
+    return m;
+  }
+
+  // 세션 제안 — 우선순위 3단계
+  //  ① 그 날짜에 이미 한쪽 세션만 기록돼 있으면 그 세션(하던 걸 이어서)
+  //  ② 직전 운동일과 교대 — 직전이 A였으면 B, B였으면 A
+  //  ③ 기록이 없거나 직전 날에 A·B를 둘 다 했으면 요일(월·목=A, 화·금=B)
+  function sessionForDate(d) {
+    var m = sessionDays();
+    var self = m[d];
+    if (self && self.A !== self.B) return self.A ? "A" : "B";
+    var prev = Object.keys(m).filter(function (x) { return x < d && (m[x].A || m[x].B); }).sort().pop();
+    if (prev && m[prev].A !== m[prev].B) return m[prev].A ? "B" : "A";
     var p = d.split("-");
     var wd = new Date(+p[0], +p[1] - 1, +p[2]).getDay();
     return (wd === 2 || wd === 5) ? "B" : "A";
