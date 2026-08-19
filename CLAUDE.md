@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 성격
 
-주 4회 2분할 운동 기록 웹앱. **단일 `index.html`**(약 2,190줄)에 데이터·스타일·로직이 모두 들어 있고 빌드 도구·패키지 매니저·테스트 러너·번들러가 전혀 없다. 외부 런타임 의존은 Firebase SDK(ESM CDN 동적 import)와 정보 팝업의 YouTube iframe 뿐이다.
+주 4회 2분할 운동 기록 웹앱. **단일 `index.html`**(약 2,140줄)에 데이터·스타일·로직이 모두 들어 있고 빌드 도구·패키지 매니저·테스트 러너·번들러가 전혀 없다. 외부 런타임 의존은 Firebase SDK(ESM CDN 동적 import)와 정보 팝업의 YouTube iframe 뿐이다.
 
 - 라이브: https://nisloke.github.io/workout-app/ (GitHub Pages, `main` 루트 서빙 → **push = 배포**)
 - 리포: `nisloke/workout-app` (public)
@@ -104,10 +104,10 @@ git -C C:\Users\User\Documents\workout-program add -A; git -C C:\Users\User\Docu
 
 | 줄 범위 | 내용 |
 |---|---|
-| 7–177 | CSS. 라이트 기본 + `@media (prefers-color-scheme: dark)` + `:root[data-theme="dark"]` 3중 정의 (토글이 양방향으로 이기게) |
-| 179–285 | HTML 골격. 메인 화면 + `#recordsView`(기록 오버레이) + `#dayModal`(날짜 기록) + `#infoModal`(종목 정보) + `#toast` |
-| 287–1120 | `<script id="appdata" type="application/json">` — **프로그램 데이터 전량** |
-| 1122–2190 | IIFE 앱 로직 (`"use strict"`, 프레임워크 없음, 순수 DOM) |
+| 7–168 | CSS. 라이트 기본 + `@media (prefers-color-scheme: dark)` + `:root[data-theme="dark"]` 3중 정의 (토글이 양방향으로 이기게) |
+| 170–274 | HTML 골격. 메인 화면 + `#recordsView`(기록 오버레이) + `#dayModal`(날짜 기록) + `#infoModal`(종목 정보) + `#toast` |
+| 276–1109 | `<script id="appdata" type="application/json">` — **프로그램 데이터 전량** |
+| 1111–2138 | IIFE 앱 로직 (`"use strict"`, 프레임워크 없음, 순수 DOM) |
 
 ## 데이터 스키마 (`#appdata`)
 
@@ -160,9 +160,10 @@ git -C C:\Users\User\Documents\workout-program add -A; git -C C:\Users\User\Docu
 
 - `render()` = 배너(`renderDateBar()`) + 탭 상태 + `renderStrength()` + `renderScore()`. 종목 드롭다운 변경 시 `render()` 전체 호출.
 - `renderBlock(block, labelPrefix)`가 카드 1개(드롭다운·ⓘ·축약 세트표기·판정 화살표·세트 체크박스·티어줄·무게/횟수/메모)를 만든다. 여기가 UI 변경의 중심.
-- `refreshAfterRecordChange()` = `save()` + `renderRecords()` + `render()` + `renderDaily()` — 기록 화면에서 편집·삭제한 뒤 반드시 이걸 호출한다.
+- 기록 화면(기록 탭)은 **달력 + 차트 3종**이다. 날짜별 기록의 열람·편집·삭제·추가는 전부 `#dayModal` 팝업 안에서 한다(정정대장 #22로 날짜 카드 목록을 폐지하고 팝업으로 통합).
+- 팝업에서 편집·삭제한 뒤에는 **`refreshDay()`**를 부른다 = `refreshAfterRecordChange()`(저장·달력·차트·메인 갱신) + 팝업 본문 재렌더, 그날 기록이 전부 지워졌으면 팝업을 닫는다. 열려 있는 날짜는 `curDay`가 들고 있다.
 - **날짜별 집계는 `dayIndex()` 하나로 모은다** — 날짜 카드·달력·날짜 팝업이 공유한다(`{score, hasA, hasB, items[{order,name,key,sess,entry}], daily}`). 새로 집계 루프를 짜면 세 화면이 어긋난다. 세션 배지 클래스는 `sessBadge(v)`.
-- 달력은 `renderCalendar()`(월 단위, `calCur`가 표시 중인 달). 기록 화면을 열 때 `calCur = null`로 이번 달부터 시작하고, 다음 달 버튼은 이번 달에서 비활성이다.
+- 달력은 `renderCalendar()`(월 단위, `calCur`가 표시 중인 달). 기록 화면을 열 때 `calCur = null`로 이번 달부터 시작하고, 다음 달 버튼은 이번 달에서 비활성이다. 팝업 본문은 `renderDayBody(d)`, 여는 것은 `openDay(d)`.
 - 차트는 `lineChart()`가 손으로 그리는 SVG(340×140, 라이브러리 없음). 색은 CSS 변수(`var(--accent)`)를 그대로 SVG 속성에 넣어 테마를 따라간다.
 - **오버레이는 `history.pushState` + `popstate`로 닫는다.** `#infoModal`·`#dayModal`·`#recordsView`를 열 때 state를 쌓고, `popstate` 한 곳에서 위 레이어부터(종목 정보 → 날짜 팝업 → 기록 화면) 닫는다. 닫기 버튼도 `history.back()`을 부른다(직접 `hidden=true` 금지 — 히스토리가 어긋난다). 새 오버레이를 추가하면 이 핸들러에 순서를 넣어야 한다.
 

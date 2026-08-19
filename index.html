@@ -98,21 +98,12 @@
   .ovhead { position: sticky; top: 0; z-index: 51; background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 12px; display: flex; align-items: center; gap: 10px; font-size: 15px; }
   .ovhead button { font-size: 13px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); }
   .ovin { max-width: 520px; margin: 0 auto; padding: 4px 12px 48px; }
-  .dc-face { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 0; font: inherit; color: inherit; text-align: left; }
-  .dc-date { font-weight: 700; font-size: 14px; }
   .dc-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; color: #fff; }
   .badge-A { background: var(--accent); }
   .badge-B { background: #10b981; }
   .badge-AB { background: linear-gradient(90deg, var(--accent), #10b981); }
   .dc-score { margin-left: auto; font-weight: 700; font-size: 14px; }
-  .dc-caret { color: var(--hint); font-size: 11px; }
-  .dc-body { display: none; margin-top: 8px; border-top: 1px dashed var(--dashed); padding-top: 8px; }
-  .datecard.open .dc-body { display: block; }
-  .dc-item { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; padding: 3px 0; line-height: 1.5; }
-  .dc-item .val { white-space: nowrap; color: var(--muted); }
-  .dc-memo { font-size: 12px; color: var(--hint); margin: -2px 0 4px; }
   .badge-none { background: var(--hint); }
-  .dc-item .nm { flex: 1; min-width: 0; }
   .rowctl { display: inline-flex; gap: 4px; flex: none; }
   .rowbtn { border: 1px solid var(--border); background: var(--card); color: var(--muted); border-radius: 6px; font-size: 12px; padding: 3px 7px; line-height: 1.2; }
   .rowbtn.save { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
@@ -283,8 +274,6 @@
     <div class="card" id="chartSleep"></div>
     <h2>운동 점수 — 무게×횟수 합 (kg 환산)</h2>
     <div class="card" id="chartScore"></div>
-    <h2>날짜별 세부 기록</h2>
-    <div id="dayList"></div>
   </div>
 </div>
 
@@ -1701,8 +1690,6 @@
     return prefix + p[1] + "/" + p[2] + " (" + wd + ")";
   }
 
-  var openDates = {}; // 편집·삭제 후 재렌더에도 펼침 상태 유지
-
   function refreshAfterRecordChange() {
     save();
     renderRecords();
@@ -1738,10 +1725,10 @@
         if (ix >= 0) arr.splice(ix, 1);
         if (!arr.length) delete store.rec[it.key];
       }
-      refreshAfterRecordChange();
+      refreshDay();
       showToast("저장됨 ✓");
     }));
-    form.appendChild(iconBtn("취소", "취소", "", function () { renderDayList(); }));
+    form.appendChild(iconBtn("취소", "취소", "", function () { renderDayBody(curDay); }));
     form.appendChild(inM);
     row.replaceWith(form);
     inW.focus();
@@ -1760,10 +1747,10 @@
       var bw = inB.value.trim(), sl = inS.value.trim();
       if (!bw && !sl) delete store.daily[d];
       else store.daily[d] = { bw: bw, sl: sl };
-      refreshAfterRecordChange();
+      refreshDay();
       showToast("저장됨 ✓");
     }));
-    form.appendChild(iconBtn("취소", "취소", "", function () { renderDayList(); }));
+    form.appendChild(iconBtn("취소", "취소", "", function () { renderDayBody(curDay); }));
     row.replaceWith(form);
     inB.focus();
   }
@@ -1793,90 +1780,6 @@
     return byDate;
   }
   function sessBadge(v) { return v.hasA && v.hasB ? "AB" : (v.hasB ? "B" : "A"); }
-
-  function renderDayList() {
-    var box = document.getElementById("dayList");
-    box.textContent = "";
-    var byDate = dayIndex();
-    var dates = Object.keys(byDate).sort().reverse();
-    if (!dates.length) {
-      box.appendChild(el("div", "card chart-empty", "기록이 쌓이면 표시됩니다"));
-      return;
-    }
-    dates.forEach(function (d) {
-      var v = byDate[d];
-      var card = el("div", "card datecard" + (openDates[d] ? " open" : ""));
-      var face = document.createElement("button");
-      face.type = "button";
-      face.className = "dc-face";
-      face.appendChild(el("span", "dc-date", dateLabel(d)));
-      if (v.items.length) {
-        var sessTxt = v.hasA && v.hasB ? "A·B" : (v.hasB ? "B" : "A");
-        face.appendChild(el("span", "dc-badge badge-" + sessBadge(v), sessTxt));
-        face.appendChild(el("span", "dc-score", Math.round(v.score) + "점"));
-      } else {
-        face.appendChild(el("span", "dc-badge badge-none", "컨디션"));
-        face.appendChild(el("span", "dc-score", ""));
-      }
-      var caret = el("span", "dc-caret", openDates[d] ? "▲" : "▼");
-      face.appendChild(caret);
-      card.appendChild(face);
-      var body = el("div", "dc-body");
-      if (v.daily) {
-        var drow = el("div", "dc-item");
-        drow.appendChild(el("span", "nm", "컨디션"));
-        var parts = [];
-        if (v.daily.bw) parts.push(v.daily.bw + "kg");
-        if (v.daily.sl) parts.push("수면 " + v.daily.sl + "h");
-        drow.appendChild(el("span", "val", parts.join(" · ") || "—"));
-        var dctl = el("span", "rowctl");
-        dctl.appendChild(iconBtn("✎", "컨디션 편집", "", function () { editDaily(d, drow); }));
-        dctl.appendChild(iconBtn("✕", "컨디션 삭제", "", function () {
-          if (!confirm(dateLabel(d) + " 체중·수면 기록을 삭제할까요?")) return;
-          delete store.daily[d];
-          refreshAfterRecordChange();
-          showToast("삭제됨");
-        }));
-        drow.appendChild(dctl);
-        body.appendChild(drow);
-      }
-      v.items.sort(function (a, b) { return a.order - b.order; });
-      v.items.forEach(function (it) {
-        var e = it.entry;
-        var row = el("div", "dc-item");
-        row.appendChild(el("span", "nm", it.name));
-        var val = (e.w ? e.w + (e.u === "lb" ? "lb" : "kg") : "—") + " × " + (e.r ? e.r + "회" : "—");
-        row.appendChild(el("span", "val", val));
-        var ctl = el("span", "rowctl");
-        ctl.appendChild(iconBtn("✎", it.name + " 편집", "", function () { editItem(it, row); }));
-        ctl.appendChild(iconBtn("✕", it.name + " 삭제", "", function () {
-          if (!confirm(dateLabel(d) + " " + it.name + " 기록을 삭제할까요?")) return;
-          var arr = store.rec[it.key] || [];
-          var ix = arr.indexOf(e);
-          if (ix >= 0) arr.splice(ix, 1);
-          if (!arr.length) delete store.rec[it.key];
-          refreshAfterRecordChange();
-          showToast("삭제됨");
-        }));
-        row.appendChild(ctl);
-        body.appendChild(row);
-        if (e.m) body.appendChild(el("div", "dc-memo", "메모: " + e.m));
-      });
-      var addBtn = document.createElement("button");
-      addBtn.type = "button";
-      addBtn.className = "dc-add";
-      addBtn.textContent = "＋ 이 날짜에 기록 추가";
-      addBtn.addEventListener("click", function () { openRecordDate(d); });
-      body.appendChild(addBtn);
-      card.appendChild(body);
-      face.addEventListener("click", function () {
-        card.classList.toggle("open");
-        openDates[d] = card.classList.contains("open");
-        caret.textContent = openDates[d] ? "▲" : "▼";
-      });
-      box.appendChild(card);
-    });
-  }
 
   // ===== 운동 달력 =====
   var calCur = null; // 표시 중인 달 {y, m(0-based)}. 기록 화면을 열 때 이번 달로 초기화된다
@@ -1934,7 +1837,25 @@
 
   // 날짜 팝업 — 달력에서 운동한 날을 누르면 그날 기록을 보여준다(읽기 전용, 편집은 날짜 카드에서)
   var dayModal = document.getElementById("dayModal");
+  var curDay = null; // 팝업이 열고 있는 날짜 — 편집·삭제 후 다시 그릴 때 쓴다
+
   function openDay(d) {
+    if (!dayIndex()[d]) return;
+    curDay = d;
+    renderDayBody(d);
+    dayModal.hidden = false;
+    history.pushState({ layer: "day" }, "");
+  }
+
+  // 편집·삭제 후: 저장·달력·차트·메인을 갱신하고 팝업을 다시 그린다.
+  // 그날 기록이 전부 지워졌으면 보여줄 게 없으므로 팝업을 닫는다.
+  function refreshDay() {
+    refreshAfterRecordChange();
+    if (curDay && dayIndex()[curDay]) renderDayBody(curDay);
+    else closeDay();
+  }
+
+  function renderDayBody(d) {
     var v = dayIndex()[d];
     if (!v) return;
     document.getElementById("dayTitle").textContent = dateLabel(d);
@@ -1949,6 +1870,7 @@
       sum.appendChild(el("span", "dc-badge badge-none", "컨디션"));
     }
     b.appendChild(sum);
+
     if (v.daily) {
       var parts = [];
       if (v.daily.bw) parts.push("체중 " + v.daily.bw + "kg");
@@ -1957,9 +1879,19 @@
         var dr = el("div", "day-row");
         dr.appendChild(el("span", "nm", "컨디션"));
         dr.appendChild(el("span", "val", parts.join(" · ")));
+        var dctl = el("span", "rowctl");
+        dctl.appendChild(iconBtn("✎", "컨디션 편집", "", function () { editDaily(d, dr); }));
+        dctl.appendChild(iconBtn("✕", "컨디션 삭제", "", function () {
+          if (!confirm(dateLabel(d) + " 체중·수면 기록을 삭제할까요?")) return;
+          delete store.daily[d];
+          refreshDay();
+          showToast("삭제됨");
+        }));
+        dr.appendChild(dctl);
         b.appendChild(dr);
       }
     }
+
     v.items.slice().sort(function (x, z) {
       if (x.sess !== z.sess) return x.sess < z.sess ? -1 : 1;
       return x.order - z.order;
@@ -1968,12 +1900,29 @@
       var row = el("div", "day-row");
       row.appendChild(el("span", "nm", (both ? it.sess + " · " : "") + it.name));
       row.appendChild(el("span", "val", (e.w ? e.w + (e.u === "lb" ? "lb" : "kg") : "—") + " × " + (e.r ? e.r + "회" : "—")));
+      var ctl = el("span", "rowctl");
+      ctl.appendChild(iconBtn("✎", it.name + " 편집", "", function () { editItem(it, row); }));
+      ctl.appendChild(iconBtn("✕", it.name + " 삭제", "", function () {
+        if (!confirm(dateLabel(d) + " " + it.name + " 기록을 삭제할까요?")) return;
+        var arr = store.rec[it.key] || [];
+        var ix = arr.indexOf(e);
+        if (ix >= 0) arr.splice(ix, 1);
+        if (!arr.length) delete store.rec[it.key];
+        refreshDay();
+        showToast("삭제됨");
+      }));
+      row.appendChild(ctl);
       b.appendChild(row);
       if (e.m) b.appendChild(el("div", "day-memo", "메모: " + e.m));
     });
     if (!v.items.length) b.appendChild(el("div", "info-txt", "운동 기록은 없고 컨디션만 기록된 날이다."));
-    dayModal.hidden = false;
-    history.pushState({ layer: "day" }, "");
+
+    var addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "dc-add";
+    addBtn.textContent = "＋ 이 날짜에 기록 추가";
+    addBtn.addEventListener("click", function () { closeDay(); openRecordDate(d); });
+    b.appendChild(addBtn);
   }
   function closeDay() { if (!dayModal.hidden) history.back(); }
   document.getElementById("btnDayClose").addEventListener("click", closeDay);
@@ -1997,7 +1946,6 @@
     box.textContent = "";
     box.appendChild(scoreLegend());
     box.appendChild(lineChart(sc.dates, sc.series, function (v) { return String(v); }));
-    renderDayList();
   }
   var recordsView = document.getElementById("recordsView");
   document.getElementById("btnRecords").addEventListener("click", function () {
